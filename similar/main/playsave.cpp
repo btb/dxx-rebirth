@@ -1133,7 +1133,7 @@ int get_highest_level(void)
 	int i;
 	int highest_saturn_level = 0;
 	read_player_file();
-	if (*Current_mission->filename == 0)	{
+	if (strlen(Current_mission_filename)==0 )	{
 		for (i=0;i < PlayerCfg.NHighestLevels;i++)
 			if (!d_stricmp(PlayerCfg.HighestLevels[i].Shortname, "DESTSAT")) // Destination Saturn.
 				highest_saturn_level = PlayerCfg.HighestLevels[i].LevelNum;

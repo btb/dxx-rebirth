@@ -67,14 +67,14 @@ enum mle_loc
 //mission list entry
 struct mle
 {
-	std::string::const_iterator filename;          // filename without extension
+	char    *filename;          // filename without extension
 	int     builtin_hogsize;    // if it's the built-in mission, used for determining the version
 	char    mission_name[MISSION_NAME_LEN+1];
 #if defined(DXX_BUILD_DESCENT_II)
 	ubyte   descent_version;    // descent 1 or descent 2?
 #endif
 	ubyte   anarchy_only_flag;  // if true, mission is anarchy only
-	std::string path;				// relative file path
+	char	*path;              // relative file path
 	enum mle_loc	location;           // where the mission is
 };
 
@@ -362,9 +362,9 @@ static int read_mission_file(mission_list &mission_list, const char *filename, e
 #endif
 		*ext = 0;			//kill extension
 
-		mission->path = temp;
+		mission->path = d_strdup(temp);
 		mission->anarchy_only_flag = 0;
-		mission->filename = next(begin(mission->path), p - temp);
+		mission->filename = mission->path + (p - temp);
 		mission->location = location;
 
 		PHYSFSX_gets_line_t<80> buf;
@@ -400,6 +400,7 @@ static int read_mission_file(mission_list &mission_list, const char *filename, e
 		}
 		else {
 			PHYSFS_close(mfile);
+			d_free(mission->path);
 			mission_list.pop_back();
 			return 0;
 		}
@@ -440,13 +441,13 @@ static void add_d1_builtin_mission_to_list(mission_list &mission_list)
 	case D1_SHAREWARE_MISSION_HOGSIZE:
 	case D1_SHAREWARE_10_MISSION_HOGSIZE:
 	case D1_MAC_SHARE_MISSION_HOGSIZE:
-		mission->path = D1_MISSION_FILENAME;
+		mission->path = d_strdup(D1_MISSION_FILENAME);
 		strcpy(mission->mission_name, D1_SHAREWARE_MISSION_NAME);
 		mission->anarchy_only_flag = 0;
 		break;
 	case D1_OEM_MISSION_HOGSIZE:
 	case D1_OEM_10_MISSION_HOGSIZE:
-		mission->path = D1_MISSION_FILENAME;
+		mission->path = d_strdup(D1_MISSION_FILENAME);
 		strcpy(mission->mission_name, D1_OEM_MISSION_NAME);
 		mission->anarchy_only_flag = 0;
 		break;
@@ -458,7 +459,7 @@ static void add_d1_builtin_mission_to_list(mission_list &mission_list)
 	case D1_MISSION_HOGSIZE2:
 	case D1_10_MISSION_HOGSIZE:
 	case D1_MAC_MISSION_HOGSIZE:
-		mission->path = D1_MISSION_FILENAME;
+		mission->path = d_strdup(D1_MISSION_FILENAME);
 		strcpy(mission->mission_name, D1_MISSION_NAME);
 		mission->anarchy_only_flag = 0;
 		break;
@@ -471,7 +472,7 @@ static void add_d1_builtin_mission_to_list(mission_list &mission_list)
 	mission->descent_version = 1;
 	mission->builtin_hogsize = 0;
 #endif
-	mission->filename = begin(mission->path);
+	mission->filename = mission->path;
 }
 
 #if defined(DXX_BUILD_DESCENT_II)
@@ -480,8 +481,8 @@ static void set_hardcoded_mission(mission_list &mission_list, const char (&path)
 {
 	mission_list.emplace_back();
 	mle *mission = &mission_list.back();
-	mission->path = path;
-	mission->filename = begin(mission->path);
+	mission->path = d_strdup(path);
+	mission->filename = mission->path;
 	strcpy(mission->mission_name,mission_name);
 	mission->anarchy_only_flag = 0;
 }
@@ -512,7 +513,7 @@ static void add_builtin_mission_to_list(mission_list &mission_list, d_fname &nam
 	}
 
 	mle *mission = &mission_list.back();
-	name.copy_if(mission->path.c_str(), FILENAME_LEN);
+	name.copy_if(mission->filename, FILENAME_LEN);
     mission->builtin_hogsize = size;
 	mission->descent_version = 2;
 	mission->anarchy_only_flag = 0;
@@ -568,7 +569,7 @@ static void promote (mission_list &mission_list, const char * mission_name, std:
 	if ((t = strchr(name,'.')) != NULL)
 		*t = 0; //kill extension
 	range_for (auto &i, partial_range(mission_list, top_place, mission_list.size()))
-		if (!d_stricmp(&*i.filename, name)) {
+		if (!d_stricmp(i.filename, name)) {
 			//swap mission positions
 			std::swap(mission_list[top_place++], i);
 			break;
@@ -578,13 +579,16 @@ static void promote (mission_list &mission_list, const char * mission_name, std:
 Mission::~Mission()
 {
     // May become more complex with the editor
-	if (!path.empty() && builtin_hogsize == 0)
+	if (path && builtin_hogsize == 0)
 		{
 			char hogpath[PATH_MAX];
 
-			snprintf(hogpath, sizeof(hogpath), MISSION_DIR "%s.hog", path.c_str());
+			snprintf(hogpath, sizeof(hogpath), MISSION_DIR "%s.hog", path);
 			PHYSFSX_contfile_close(hogpath);
 		}
+
+	if (path)
+		d_free(path);
 }
 
 
@@ -633,6 +637,12 @@ static mission_list build_mission_list(int anarchy_mode)
 	if (mission_list.size() > top_place)
 		std::sort(next(begin(mission_list), top_place), end(mission_list), ml_sort_func);
 	return mission_list;
+}
+
+static void free_mission_list(mission_list &mission_list)
+{
+	range_for (auto &i, mission_list)
+		d_free(i.path);
 }
 
 #if defined(DXX_BUILD_DESCENT_II)
@@ -715,8 +725,8 @@ static int load_mission(const mle *mission)
 	Current_mission->descent_version = mission->descent_version;
 #endif
 	Current_mission->anarchy_only_flag = mission->anarchy_only_flag;
-	Current_mission->path = mission->path;
-	Current_mission->filename = next(begin(Current_mission->path), distance(begin(mission->path), mission->filename));
+	Current_mission->path = d_strdup(mission->path);
+	Current_mission->filename = Current_mission->path + (mission->filename - mission->path);
 	Current_mission->n_secret_levels = 0;
 #if defined(DXX_BUILD_DESCENT_II)
 	Current_mission->enhanced = 0;
@@ -773,12 +783,23 @@ static int load_mission(const mle *mission)
 
 	//read mission from file
 
-	auto &msn_extension =
+	switch (mission->location) {
+	case ML_MISSIONDIR:
+		strcpy(buf,MISSION_DIR);
+		break;
+	default:
+		Int3();							//fall through
+	case ML_CURDIR:
+		strcpy(buf,"");
+		break;
+	}
+	strcat(buf, mission->path);
 #if defined(DXX_BUILD_DESCENT_II)
-	(mission->descent_version == 2) ? ".mn2" :
+	if (mission->descent_version == 2)
+		strcat(buf,".mn2");
+	else
 #endif
-		".msn";
-	snprintf(buf, sizeof(buf), "%s%s%s", mission->location == ML_MISSIONDIR ? MISSION_DIR : "", mission->path.c_str(), msn_extension);
+		strcat(buf,".msn");
 
 	PHYSFSEXT_locateCorrectCase(buf);
 
@@ -889,19 +910,19 @@ static int load_mission(const mle *mission)
 				if ((v=get_value(buf))!=NULL) {
 					unsigned l = strlen(v);
 					if (l <= 4)
-						con_printf(CON_URGENT, "Mission %s has short HAM \"%s\".", Current_mission->path.c_str(), v);
+						con_printf(CON_URGENT, "Mission %s has short HAM \"%s\".", Current_mission->path, v);
 					else if (l >= sizeof(*Current_mission->alternate_ham_file))
-						con_printf(CON_URGENT, "Mission %s has excessive HAM \"%s\".", Current_mission->path.c_str(), v);
+						con_printf(CON_URGENT, "Mission %s has excessive HAM \"%s\".", Current_mission->path, v);
 					else {
 						Current_mission->alternate_ham_file->copy_if(v, l + 1);
-						con_printf(CON_VERBOSE, "Mission %s will use HAM %s.", Current_mission->path.c_str(), static_cast<const char *>(*Current_mission->alternate_ham_file));
+						con_printf(CON_VERBOSE, "Mission %s will use HAM %s.", Current_mission->path, static_cast<const char *>(*Current_mission->alternate_ham_file));
 					}
 				}
 				else
-					con_printf(CON_URGENT, "Mission %s has no HAM.", Current_mission->path.c_str());
+					con_printf(CON_URGENT, "Mission %s has no HAM.", Current_mission->path);
 			}
 			else {
-				con_printf(CON_URGENT, "Mission %s uses unsupported critical directive \"%s\".", Current_mission->path.c_str(), buf.line());
+				con_printf(CON_URGENT, "Mission %s uses unsupported critical directive \"%s\".", Current_mission->path, buf.line());
 				Last_level = 0;
 				break;
 			}
@@ -936,11 +957,13 @@ int load_mission_by_name(const char *mission_name)
 	bool found = 0;
 
 	range_for (auto &i, mission_list)
-		if (!d_stricmp(mission_name, &*i.filename))
+		if (!d_stricmp(mission_name, i.filename))
 		{
 			found = load_mission(&i);
 			break;
 		}
+
+	free_mission_list(mission_list);
 	return found;
 }
 
@@ -973,6 +996,7 @@ static int mission_menu_handler(listbox *lb,const d_event &event, mission_menu *
 			break;
 
 		case EVENT_WINDOW_CLOSE:
+			free_mission_list(mm->ml);
 			d_free(list);
 			delete mm;
 			break;
@@ -992,6 +1016,7 @@ int select_mission(int anarchy_mode, const char *message, int (*when_selected)(v
     if (mission_list.size() <= 1)
 	{
         new_mission_num = !mission_list.empty() && load_mission(&mission_list.front()) ? 0 : -1;
+		free_mission_list(mission_list);
 		(*when_selected)();
 		
 		return (new_mission_num >= 0);
@@ -1004,6 +1029,7 @@ int select_mission(int anarchy_mode, const char *message, int (*when_selected)(v
 		MALLOC(m, const char *, mission_list.size());
 		if (!m)
 		{
+			free_mission_list(mission_list);
 			return 0;
 		}
 		
@@ -1029,8 +1055,14 @@ int select_mission(int anarchy_mode, const char *message, int (*when_selected)(v
 void create_new_mission(void)
 {
 	Current_mission.reset(new Mission{});
-	Current_mission->path = "new_mission";
-	Current_mission->filename = begin(Current_mission->path);
+	Current_mission->path = d_strdup("new_mission");
+	if (!Current_mission->path)
+	{
+		Current_mission.reset();
+		return;
+	}
+
+	Current_mission->filename = Current_mission->path;
 	
 	Level_names = make_unique<d_fname[]>(1);
 	if (!Level_names)
