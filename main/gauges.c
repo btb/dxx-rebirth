@@ -181,7 +181,7 @@ extern int Current_display_mode;
 #define FPOS_SCALEY 1
 #endif
 
-inline void hud_bitblt (int x, int y, grs_bitmap *bm, int scale, int orient)
+void hud_bitblt (int x, int y, grs_bitmap *bm, int scale, int orient)
 {
 #ifdef OGL
 ogl_ubitmapm_cs (
