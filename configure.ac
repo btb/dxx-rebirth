@@ -216,6 +216,9 @@ else
     AC_ARG_WITH(opengl,
         [  --with-opengl           Build OpenGL support ],,)
     if test x$with_opengl = xyes; then
+        if test x$MACOSX = xyes; then
+            OGL_LIBS="-framework OpenGL"
+        fi
         for lib in $GL_LIBS; do
             AC_CHECK_LIB($lib, main,
                 OGL_LIBS="${OGL_LIBS} -l$lib",
