@@ -168,7 +168,7 @@ void load_text()
 
 		//scan for special chars (like \n)
 		for (p=Text_string[i];(p=strchr(p,'\\'));) {
-			char newchar;
+			char newchar, *q;
 
 			if (p[1] == 'n') newchar = '\n';
 			else if (p[1] == 't') newchar = '\t';
@@ -177,7 +177,12 @@ void load_text()
 				Error("Unsupported key sequence <\\%c> on line %d of file <%s>",p[1],i+1,filename);
 
 			p[0] = newchar;
-			strcpy(p+1,p+2);
+
+			//shift rest of string to left
+			for (q = p+1; *q; q++) {
+				*q = *(q+1);
+			}
+
 			p++;
 		}
 
