@@ -1,5 +1,5 @@
 noinst_LIBRARIES = libmisc.a
-INCLUDES = -I $(top_srcdir)/include
+AM_CPPFLAGS = -I $(top_srcdir)/include
 
 if USE_LIBPNG
 PNG_SRCS = pngfile.c
@@ -14,7 +14,7 @@ EXTRA_libmisc_a_SOURCES = pngfile.c
 # checker.c
 
 #checker.o: checker.c
-#	gcc -c -g $< -o $@ $(INCLUDES) $(CFLAGS) -I/usr/lib/checker/i686-pc-linux-gnu/include -I.. -I.
+#	gcc -c -g $< -o $@ $(AM_CPPFLAGS) $(CFLAGS) -I/usr/lib/checker/i686-pc-linux-gnu/include -I.. -I.
 
 EXTRA_DIST = \
 dos_disk.h parsarg.h \
