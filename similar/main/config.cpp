@@ -247,42 +247,17 @@ int ReadConfigFile()
 int WriteConfigFile()
 {
 	GameCfg.GammaLevel = gr_palette_get_gamma();
+	GameCfg.LastPlayer = Players[Player_num].callsign;
+	GameCfg.ResolutionX = SM_W(Game_screen_mode);
+	GameCfg.ResolutionY = SM_H(Game_screen_mode);
 
 	auto infile = PHYSFSX_openWriteBuffered("descent.cfg");
 	if (!infile)
 	{
 		return 1;
 	}
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.DigiVolume.name, static_cast<int>(GameCfg.DigiVolume));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.MusicVolume.name, static_cast<int>(GameCfg.MusicVolume));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.ReverseStereo.name, static_cast<int>(GameCfg.ReverseStereo));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.OrigTrackOrder.name, static_cast<int>(GameCfg.OrigTrackOrder));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.MusicType.name, static_cast<int>(GameCfg.MusicType));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.CMLevelMusicPlayOrder.name, static_cast<int>(GameCfg.CMLevelMusicPlayOrder));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.CMLevelMusicTrack[0].name, static_cast<int>(GameCfg.CMLevelMusicTrack[0]));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.CMLevelMusicTrack[1].name, static_cast<int>(GameCfg.CMLevelMusicTrack[1]));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMLevelMusicPath.name, static_cast<const char *>(GameCfg.CMLevelMusicPath));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_TITLE].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_TITLE]));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_BRIEFING].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_BRIEFING]));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_ENDLEVEL].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_ENDLEVEL]));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_ENDGAME].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_ENDGAME]));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_CREDITS].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_CREDITS]));
-	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.GammaLevel.name, static_cast<int>(GameCfg.GammaLevel));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.LastPlayer.name, static_cast<const char *>(Players[Player_num].callsign));
-	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.LastMission.name, static_cast<const char *>(GameCfg.LastMission));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.ResolutionX.name, SM_W(Game_screen_mode));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.ResolutionY.name, SM_H(Game_screen_mode));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.AspectX.name, static_cast<int>(GameCfg.AspectX));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.AspectY.name, static_cast<int>(GameCfg.AspectY));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.WindowMode.name, static_cast<int>(GameCfg.WindowMode));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.TexFilt.name, static_cast<int>(GameCfg.TexFilt));
-#if defined(DXX_BUILD_DESCENT_II)
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.MovieTexFilt.name, static_cast<int>(GameCfg.MovieTexFilt));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.MovieSubtitles.name, static_cast<int>(GameCfg.MovieSubtitles));
-#endif
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.VSync.name, static_cast<int>(GameCfg.VSync));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.Multisample.name, static_cast<int>(GameCfg.Multisample));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.FPSIndicator.name, static_cast<int>(GameCfg.FPSIndicator));
-	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.Grabinput.name, static_cast<int>(GameCfg.Grabinput));
+
+	cvar_write(infile);
+
 	return 0;
 }
