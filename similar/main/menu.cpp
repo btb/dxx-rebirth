@@ -354,7 +354,7 @@ int RegisterPlayer()
 		else
 		{
 			// Read the last player's name from config file, not lastplr.txt
-			Players[Player_num].callsign.copy(GameCfg.LastPlayer, CALLSIGN_LEN - 1);
+			Players[Player_num].callsign.copy_lower(GameCfg.LastPlayer, CALLSIGN_LEN - 1);
 		}
 	}
 

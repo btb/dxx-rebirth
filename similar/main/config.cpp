@@ -148,93 +148,17 @@ int ReadConfigFile()
 	GameCfg.Grabinput = 1;
 
 
-	auto infile = PHYSFSX_openReadBuffered("descent.cfg");
-	if (!infile)
+	if (!PHYSFSX_exists("descent.cfg", 1))
 	{
 		return 1;
 	}
 
-	// to be fully safe, assume the whole cfg consists of one big line
-	for (PHYSFSX_gets_line_t<0> line(PHYSFS_fileLength(infile) + 1); !PHYSFS_eof(infile);)
-	{
-		PHYSFSX_fgets(line, infile);
-		const auto lb = line.begin();
-		const auto eol = std::find(lb, line.end(), 0);
-		if (eol == line.end())
-			continue;
-		auto eq = std::find(lb, eol, '=');
-		if (eq == eol)
-			continue;
-		auto value = std::next(eq);
-		if (!d_stricmp(lb, GameCfg.DigiVolume.name))
-			GameCfg.DigiVolume = value;
-		else if (!d_stricmp(lb, GameCfg.MusicVolume.name))
-			GameCfg.MusicVolume = value;
-		else if (!d_stricmp(lb, GameCfg.ReverseStereo.name))
-			GameCfg.ReverseStereo = value;
-		else if (!d_stricmp(lb, GameCfg.OrigTrackOrder.name))
-			GameCfg.OrigTrackOrder = value;
-		else if (!d_stricmp(lb, GameCfg.MusicType.name))
-			GameCfg.MusicType = value;
-		else if (!d_stricmp(lb, GameCfg.CMLevelMusicPlayOrder.name))
-			GameCfg.CMLevelMusicPlayOrder = value;
-		else if (!d_stricmp(lb, GameCfg.CMLevelMusicTrack[0].name))
-			GameCfg.CMLevelMusicTrack[0] = value;
-		else if (!d_stricmp(lb, GameCfg.CMLevelMusicTrack[1].name))
-			GameCfg.CMLevelMusicTrack[1] = value;
-		else if (!d_stricmp(lb, GameCfg.CMLevelMusicPath.name))
-			GameCfg.CMLevelMusicPath = value;
-		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_TITLE].name))
-			GameCfg.CMMiscMusic[SONG_TITLE] = value;
-		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_BRIEFING].name))
-			GameCfg.CMMiscMusic[SONG_BRIEFING] = value;
-		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_ENDLEVEL].name))
-			GameCfg.CMMiscMusic[SONG_ENDLEVEL] = value;
-		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_ENDGAME].name))
-			GameCfg.CMMiscMusic[SONG_ENDGAME] = value;
-		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_CREDITS].name))
-			GameCfg.CMMiscMusic[SONG_CREDITS] = value;
-		else if (!d_stricmp(lb, GameCfg.GammaLevel.name))
-		{
-			GameCfg.GammaLevel = value;
-			gr_palette_set_gamma( GameCfg.GammaLevel );
-		}
-		else if (!d_stricmp(lb, GameCfg.LastPlayer.name))
-		{
-			char temp[CALLSIGN_LEN + 1];
-			strncpy(temp, value, CALLSIGN_LEN + 1);
-			d_strlwr(temp);
-			GameCfg.LastPlayer = temp;
-		}
-		else if (!d_stricmp(lb, GameCfg.LastMission.name))
-			GameCfg.LastMission = value;
-		else if (!d_stricmp(lb, GameCfg.ResolutionX.name))
-			GameCfg.ResolutionX = value;
-		else if (!d_stricmp(lb, GameCfg.ResolutionY.name))
-			GameCfg.ResolutionY = value;
-		else if (!d_stricmp(lb, GameCfg.AspectX.name))
-			GameCfg.AspectX = value;
-		else if (!d_stricmp(lb, GameCfg.AspectY.name))
-			GameCfg.AspectY = value;
-		else if (!d_stricmp(lb, GameCfg.WindowMode.name))
-			GameCfg.WindowMode = value;
-		else if (!d_stricmp(lb, GameCfg.TexFilt.name))
-			GameCfg.TexFilt = value;
-#if defined(DXX_BUILD_DESCENT_II)
-		else if (!d_stricmp(lb, GameCfg.MovieTexFilt.name))
-			GameCfg.MovieTexFilt = value;
-		else if (!d_stricmp(lb, GameCfg.MovieSubtitles.name))
-			GameCfg.MovieSubtitles = value;
-#endif
-		else if (!d_stricmp(lb, GameCfg.VSync.name))
-			GameCfg.VSync = value;
-		else if (!d_stricmp(lb, GameCfg.Multisample.name))
-			GameCfg.Multisample = value;
-		else if (!d_stricmp(lb, GameCfg.FPSIndicator.name))
-			GameCfg.FPSIndicator = value;
-		else if (!d_stricmp(lb, GameCfg.Grabinput.name))
-			GameCfg.Grabinput = value;
-	}
+	cmd_append("exec descent.cfg");
+	cmd_queue_flush();
+
+
+	gr_palette_set_gamma( GameCfg.GammaLevel );
+
 	if ( GameCfg.DigiVolume > 8 ) GameCfg.DigiVolume = 8;
 	if ( GameCfg.MusicVolume > 8 ) GameCfg.MusicVolume = 8;
 
