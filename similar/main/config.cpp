@@ -42,45 +42,58 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "u_mem.h"
 #include "physfsx.h"
 #include "nvparse.h"
+#include "strutil.h"
 
 #include "compiler-make_unique.h"
 
 struct Cfg GameCfg;
 
-#define DigiVolumeStr "DigiVolume"
-#define MusicVolumeStr "MusicVolume"
-#define ReverseStereoStr "ReverseStereo"
-#define OrigTrackOrderStr "OrigTrackOrder"
-#define MusicTypeStr "MusicType"
-#define CMLevelMusicPlayOrderStr "CMLevelMusicPlayOrder"
-#define CMLevelMusicTrack0Str "CMLevelMusicTrack0"
-#define CMLevelMusicTrack1Str "CMLevelMusicTrack1"
-#define CMLevelMusicPathStr "CMLevelMusicPath"
-#define CMMiscMusic0Str "CMMiscMusic0"
-#define CMMiscMusic1Str "CMMiscMusic1"
-#define CMMiscMusic2Str "CMMiscMusic2"
-#define CMMiscMusic3Str "CMMiscMusic3"
-#define CMMiscMusic4Str "CMMiscMusic4"
-#define GammaLevelStr "GammaLevel"
-#define LastPlayerStr "LastPlayer"
-#define LastMissionStr "LastMission"
-#define ResolutionXStr "ResolutionX"
-#define ResolutionYStr "ResolutionY"
-#define AspectXStr "AspectX"
-#define AspectYStr "AspectY"
-#define WindowModeStr "WindowMode"
-#define TexFiltStr "TexFilt"
+
+static int config_initialized;
+
+static void config_init(void)
+{
+	int i;
+
+	/* make sure our cvars are registered */
+	cvar_registervariable(&GameCfg.DigiVolume);
+	cvar_registervariable(&GameCfg.MusicVolume);
+	cvar_registervariable(&GameCfg.ReverseStereo);
+	cvar_registervariable(&GameCfg.OrigTrackOrder);
+	cvar_registervariable(&GameCfg.MusicType);
+	cvar_registervariable(&GameCfg.CMLevelMusicPlayOrder);
+	for (i = 0; i < 2; i++)
+		cvar_registervariable(&GameCfg.CMLevelMusicTrack[i]);
+	cvar_registervariable(&GameCfg.CMLevelMusicPath);
+	for (i = 0; i < 5; i++)
+		cvar_registervariable(&GameCfg.CMMiscMusic[i]);
+	cvar_registervariable(&GameCfg.GammaLevel);
+	cvar_registervariable(&GameCfg.LastPlayer);
+	cvar_registervariable(&GameCfg.LastMission);
+	cvar_registervariable(&GameCfg.ResolutionX);
+	cvar_registervariable(&GameCfg.ResolutionY);
+	cvar_registervariable(&GameCfg.AspectX);
+	cvar_registervariable(&GameCfg.AspectY);
+	cvar_registervariable(&GameCfg.WindowMode);
+	cvar_registervariable(&GameCfg.TexFilt);
 #if defined(DXX_BUILD_DESCENT_II)
-#define MovieTexFiltStr "MovieTexFilt"
-#define MovieSubtitlesStr "MovieSubtitles"
+	cvar_registervariable(&GameCfg.MovieTexFilt);
+	cvar_registervariable(&GameCfg.MovieSubtitles);
 #endif
-#define VSyncStr "VSync"
-#define MultisampleStr "Multisample"
-#define FPSIndicatorStr "FPSIndicator"
-#define GrabinputStr "GrabInput"
+	cvar_registervariable(&GameCfg.VSync);
+	cvar_registervariable(&GameCfg.Multisample);
+	cvar_registervariable(&GameCfg.FPSIndicator);
+	cvar_registervariable(&GameCfg.Grabinput);
+
+	config_initialized = 1;
+}
+
 
 int ReadConfigFile()
 {
+	if (!config_initialized)
+		config_init();
+
 	// set defaults
 	GameCfg.DigiVolume = 8;
 	GameCfg.MusicVolume = 8;
@@ -94,27 +107,31 @@ int ReadConfigFile()
 	GameCfg.CMLevelMusicPlayOrder = MUSIC_CM_PLAYORDER_CONT;
 	GameCfg.CMLevelMusicTrack[0] = -1;
 	GameCfg.CMLevelMusicTrack[1] = -1;
-	GameCfg.CMLevelMusicPath = {};
-	GameCfg.CMMiscMusic = {};
+	GameCfg.CMLevelMusicPath = "";
+	GameCfg.CMMiscMusic[0] = "";
+	GameCfg.CMMiscMusic[1] = "";
+	GameCfg.CMMiscMusic[2] = "";
+	GameCfg.CMMiscMusic[3] = "";
+	GameCfg.CMMiscMusic[4] = "";
 #if defined(__APPLE__) && defined(__MACH__)
 	GameCfg.OrigTrackOrder = 1;
 #if defined(DXX_BUILD_DESCENT_I)
 	GameCfg.CMLevelMusicPlayOrder = MUSIC_CM_PLAYORDER_LEVEL;
 	GameCfg.CMLevelMusicPath = "descent.m3u";
-	snprintf(GameCfg.CMMiscMusic[SONG_TITLE].data(), GameCfg.CMMiscMusic[SONG_TITLE].size(), "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/02 Primitive Rage.mp3");
-	snprintf(GameCfg.CMMiscMusic[SONG_CREDITS].data(), GameCfg.CMMiscMusic[SONG_CREDITS].size(), "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/05 The Darkness Of Space.mp3");
+	cvar_set_cvarf(&GameCfg.CMMiscMusic[SONG_TITLE], "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/02 Primitive Rage.mp3");
+	cvar_set_cvarf(&GameCfg.CMMiscMusic[SONG_CREDITS], "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/05 The Darkness Of Space.mp3");
 #elif defined(DXX_BUILD_DESCENT_II)
 	GameCfg.CMLevelMusicPath = "descent2.m3u";
-	snprintf(GameCfg.CMMiscMusic[SONG_TITLE].data(), GameCfg.CMMiscMusic[SONG_TITLE].size(), "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Redbook Soundtrack/Descent II, Macintosh CD-ROM/02 Title.mp3");
-	snprintf(GameCfg.CMMiscMusic[SONG_CREDITS].data(), GameCfg.CMMiscMusic[SONG_CREDITS].size(), "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Redbook Soundtrack/Descent II, Macintosh CD-ROM/03 Crawl.mp3");
+	cvar_set_cvarf(&GameCfg.CMMiscMusic[SONG_TITLE], "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Redbook Soundtrack/Descent II, Macintosh CD-ROM/02 Title.mp3");
+	cvar_set_cvarf(&GameCfg.CMMiscMusic[SONG_CREDITS], "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Redbook Soundtrack/Descent II, Macintosh CD-ROM/03 Crawl.mp3");
 #endif
-	snprintf(GameCfg.CMMiscMusic[SONG_BRIEFING].data(), GameCfg.CMMiscMusic[SONG_BRIEFING].size(), "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/03 Outerlimits.mp3");
-	snprintf(GameCfg.CMMiscMusic[SONG_ENDLEVEL].data(), GameCfg.CMMiscMusic[SONG_ENDLEVEL].size(), "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/04 Close Call.mp3");
-	snprintf(GameCfg.CMMiscMusic[SONG_ENDGAME].data(), GameCfg.CMMiscMusic[SONG_ENDGAME].size(), "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/14 Insanity.mp3");
+	cvar_set_cvarf(&GameCfg.CMMiscMusic[SONG_BRIEFING], "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/03 Outerlimits.mp3");
+	cvar_set_cvarf(&GameCfg.CMMiscMusic[SONG_ENDLEVEL], "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/04 Close Call.mp3");
+	cvar_set_cvarf(&GameCfg.CMMiscMusic[SONG_ENDGAME], "%s%s", PHYSFS_getUserDir(), "Music/iTunes/iTunes Music/Insanity/Descent/14 Insanity.mp3");
 #endif
 	GameCfg.GammaLevel = 0;
-	GameCfg.LastPlayer.fill(0);
-	memset(GameCfg.LastMission,0,MISSION_NAME_LEN+1);
+	GameCfg.LastPlayer = "";
+	GameCfg.LastMission = "";
 	GameCfg.ResolutionX = 640;
 	GameCfg.ResolutionY = 480;
 	GameCfg.AspectX = 3;
@@ -149,69 +166,74 @@ int ReadConfigFile()
 		if (eq == eol)
 			continue;
 		auto value = std::next(eq);
-		if (cmp(lb, eq, DigiVolumeStr))
-			convert_integer(GameCfg.DigiVolume, value);
-		else if (cmp(lb, eq, MusicVolumeStr))
-			convert_integer(GameCfg.MusicVolume, value);
-		else if (cmp(lb, eq, ReverseStereoStr))
-			convert_integer(GameCfg.ReverseStereo, value);
-		else if (cmp(lb, eq, OrigTrackOrderStr))
-			convert_integer(GameCfg.OrigTrackOrder, value);
-		else if (cmp(lb, eq, MusicTypeStr))
-			convert_integer(GameCfg.MusicType, value);
-		else if (cmp(lb, eq, CMLevelMusicPlayOrderStr))
-			convert_integer(GameCfg.CMLevelMusicPlayOrder, value);
-		else if (cmp(lb, eq, CMLevelMusicTrack0Str))
-			convert_integer(GameCfg.CMLevelMusicTrack[0], value);
-		else if (cmp(lb, eq, CMLevelMusicTrack1Str))
-			convert_integer(GameCfg.CMLevelMusicTrack[1], value);
-		else if (cmp(lb, eq, CMLevelMusicPathStr))
-			convert_string(GameCfg.CMLevelMusicPath, value, eol);
-		else if (cmp(lb, eq, CMMiscMusic0Str))
-			convert_string(GameCfg.CMMiscMusic[SONG_TITLE], value, eol);
-		else if (cmp(lb, eq, CMMiscMusic1Str))
-			convert_string(GameCfg.CMMiscMusic[SONG_BRIEFING], value, eol);
-		else if (cmp(lb, eq, CMMiscMusic2Str))
-			convert_string(GameCfg.CMMiscMusic[SONG_ENDLEVEL], value, eol);
-		else if (cmp(lb, eq, CMMiscMusic3Str))
-			convert_string(GameCfg.CMMiscMusic[SONG_ENDGAME], value, eol);
-		else if (cmp(lb, eq, CMMiscMusic4Str))
-			convert_string(GameCfg.CMMiscMusic[SONG_CREDITS], value, eol);
-		else if (cmp(lb, eq, GammaLevelStr))
+		if (!d_stricmp(lb, GameCfg.DigiVolume.name))
+			GameCfg.DigiVolume = value;
+		else if (!d_stricmp(lb, GameCfg.MusicVolume.name))
+			GameCfg.MusicVolume = value;
+		else if (!d_stricmp(lb, GameCfg.ReverseStereo.name))
+			GameCfg.ReverseStereo = value;
+		else if (!d_stricmp(lb, GameCfg.OrigTrackOrder.name))
+			GameCfg.OrigTrackOrder = value;
+		else if (!d_stricmp(lb, GameCfg.MusicType.name))
+			GameCfg.MusicType = value;
+		else if (!d_stricmp(lb, GameCfg.CMLevelMusicPlayOrder.name))
+			GameCfg.CMLevelMusicPlayOrder = value;
+		else if (!d_stricmp(lb, GameCfg.CMLevelMusicTrack[0].name))
+			GameCfg.CMLevelMusicTrack[0] = value;
+		else if (!d_stricmp(lb, GameCfg.CMLevelMusicTrack[1].name))
+			GameCfg.CMLevelMusicTrack[1] = value;
+		else if (!d_stricmp(lb, GameCfg.CMLevelMusicPath.name))
+			GameCfg.CMLevelMusicPath = value;
+		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_TITLE].name))
+			GameCfg.CMMiscMusic[SONG_TITLE] = value;
+		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_BRIEFING].name))
+			GameCfg.CMMiscMusic[SONG_BRIEFING] = value;
+		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_ENDLEVEL].name))
+			GameCfg.CMMiscMusic[SONG_ENDLEVEL] = value;
+		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_ENDGAME].name))
+			GameCfg.CMMiscMusic[SONG_ENDGAME] = value;
+		else if (!d_stricmp(lb, GameCfg.CMMiscMusic[SONG_CREDITS].name))
+			GameCfg.CMMiscMusic[SONG_CREDITS] = value;
+		else if (!d_stricmp(lb, GameCfg.GammaLevel.name))
 		{
-			convert_integer(GameCfg.GammaLevel, value);
+			GameCfg.GammaLevel = value;
 			gr_palette_set_gamma( GameCfg.GammaLevel );
 		}
-		else if (cmp(lb, eq, LastPlayerStr))
-			GameCfg.LastPlayer.copy_lower(value, std::distance(value, eol));
-		else if (cmp(lb, eq, LastMissionStr))
-			convert_string(GameCfg.LastMission, value, eol);
-		else if (cmp(lb, eq, ResolutionXStr))
-			convert_integer(GameCfg.ResolutionX, value);
-		else if (cmp(lb, eq, ResolutionYStr))
-			convert_integer(GameCfg.ResolutionY, value);
-		else if (cmp(lb, eq, AspectXStr))
-			convert_integer(GameCfg.AspectX, value);
-		else if (cmp(lb, eq, AspectYStr))
-			convert_integer(GameCfg.AspectY, value);
-		else if (cmp(lb, eq, WindowModeStr))
-			convert_integer(GameCfg.WindowMode, value);
-		else if (cmp(lb, eq, TexFiltStr))
-			convert_integer(GameCfg.TexFilt, value);
+		else if (!d_stricmp(lb, GameCfg.LastPlayer.name))
+		{
+			char temp[CALLSIGN_LEN + 1];
+			strncpy(temp, value, CALLSIGN_LEN + 1);
+			d_strlwr(temp);
+			GameCfg.LastPlayer = temp;
+		}
+		else if (!d_stricmp(lb, GameCfg.LastMission.name))
+			GameCfg.LastMission = value;
+		else if (!d_stricmp(lb, GameCfg.ResolutionX.name))
+			GameCfg.ResolutionX = value;
+		else if (!d_stricmp(lb, GameCfg.ResolutionY.name))
+			GameCfg.ResolutionY = value;
+		else if (!d_stricmp(lb, GameCfg.AspectX.name))
+			GameCfg.AspectX = value;
+		else if (!d_stricmp(lb, GameCfg.AspectY.name))
+			GameCfg.AspectY = value;
+		else if (!d_stricmp(lb, GameCfg.WindowMode.name))
+			GameCfg.WindowMode = value;
+		else if (!d_stricmp(lb, GameCfg.TexFilt.name))
+			GameCfg.TexFilt = value;
 #if defined(DXX_BUILD_DESCENT_II)
-		else if (cmp(lb, eq, MovieTexFiltStr))
-			convert_integer(GameCfg.MovieTexFilt, value);
-		else if (cmp(lb, eq, MovieSubtitlesStr))
-			convert_integer(GameCfg.MovieSubtitles, value);
+		else if (!d_stricmp(lb, GameCfg.MovieTexFilt.name))
+			GameCfg.MovieTexFilt = value;
+		else if (!d_stricmp(lb, GameCfg.MovieSubtitles.name))
+			GameCfg.MovieSubtitles = value;
 #endif
-		else if (cmp(lb, eq, VSyncStr))
-			convert_integer(GameCfg.VSync, value);
-		else if (cmp(lb, eq, MultisampleStr))
-			convert_integer(GameCfg.Multisample, value);
-		else if (cmp(lb, eq, FPSIndicatorStr))
-			convert_integer(GameCfg.FPSIndicator, value);
-		else if (cmp(lb, eq, GrabinputStr))
-			convert_integer(GameCfg.Grabinput, value);
+		else if (!d_stricmp(lb, GameCfg.VSync.name))
+			GameCfg.VSync = value;
+		else if (!d_stricmp(lb, GameCfg.Multisample.name))
+			GameCfg.Multisample = value;
+		else if (!d_stricmp(lb, GameCfg.FPSIndicator.name))
+			GameCfg.FPSIndicator = value;
+		else if (!d_stricmp(lb, GameCfg.Grabinput.name))
+			GameCfg.Grabinput = value;
 	}
 	if ( GameCfg.DigiVolume > 8 ) GameCfg.DigiVolume = 8;
 	if ( GameCfg.MusicVolume > 8 ) GameCfg.MusicVolume = 8;
@@ -231,36 +253,36 @@ int WriteConfigFile()
 	{
 		return 1;
 	}
-	PHYSFSX_printf(infile, "%s=%d\n", DigiVolumeStr, GameCfg.DigiVolume);
-	PHYSFSX_printf(infile, "%s=%d\n", MusicVolumeStr, GameCfg.MusicVolume);
-	PHYSFSX_printf(infile, "%s=%d\n", ReverseStereoStr, GameCfg.ReverseStereo);
-	PHYSFSX_printf(infile, "%s=%d\n", OrigTrackOrderStr, GameCfg.OrigTrackOrder);
-	PHYSFSX_printf(infile, "%s=%d\n", MusicTypeStr, GameCfg.MusicType);
-	PHYSFSX_printf(infile, "%s=%d\n", CMLevelMusicPlayOrderStr, GameCfg.CMLevelMusicPlayOrder);
-	PHYSFSX_printf(infile, "%s=%d\n", CMLevelMusicTrack0Str, GameCfg.CMLevelMusicTrack[0]);
-	PHYSFSX_printf(infile, "%s=%d\n", CMLevelMusicTrack1Str, GameCfg.CMLevelMusicTrack[1]);
-	PHYSFSX_printf(infile, "%s=%s\n", CMLevelMusicPathStr, GameCfg.CMLevelMusicPath.data());
-	PHYSFSX_printf(infile, "%s=%s\n", CMMiscMusic0Str, GameCfg.CMMiscMusic[SONG_TITLE].data());
-	PHYSFSX_printf(infile, "%s=%s\n", CMMiscMusic1Str, GameCfg.CMMiscMusic[SONG_BRIEFING].data());
-	PHYSFSX_printf(infile, "%s=%s\n", CMMiscMusic2Str, GameCfg.CMMiscMusic[SONG_ENDLEVEL].data());
-	PHYSFSX_printf(infile, "%s=%s\n", CMMiscMusic3Str, GameCfg.CMMiscMusic[SONG_ENDGAME].data());
-	PHYSFSX_printf(infile, "%s=%s\n", CMMiscMusic4Str, GameCfg.CMMiscMusic[SONG_CREDITS].data());
-	PHYSFSX_printf(infile, "%s=%d\n", GammaLevelStr, GameCfg.GammaLevel);
-	PHYSFSX_printf(infile, "%s=%s\n", LastPlayerStr, static_cast<const char *>(Players[Player_num].callsign));
-	PHYSFSX_printf(infile, "%s=%s\n", LastMissionStr, GameCfg.LastMission);
-	PHYSFSX_printf(infile, "%s=%i\n", ResolutionXStr, SM_W(Game_screen_mode));
-	PHYSFSX_printf(infile, "%s=%i\n", ResolutionYStr, SM_H(Game_screen_mode));
-	PHYSFSX_printf(infile, "%s=%i\n", AspectXStr, GameCfg.AspectX);
-	PHYSFSX_printf(infile, "%s=%i\n", AspectYStr, GameCfg.AspectY);
-	PHYSFSX_printf(infile, "%s=%i\n", WindowModeStr, GameCfg.WindowMode);
-	PHYSFSX_printf(infile, "%s=%i\n", TexFiltStr, GameCfg.TexFilt);
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.DigiVolume.name, static_cast<int>(GameCfg.DigiVolume));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.MusicVolume.name, static_cast<int>(GameCfg.MusicVolume));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.ReverseStereo.name, static_cast<int>(GameCfg.ReverseStereo));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.OrigTrackOrder.name, static_cast<int>(GameCfg.OrigTrackOrder));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.MusicType.name, static_cast<int>(GameCfg.MusicType));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.CMLevelMusicPlayOrder.name, static_cast<int>(GameCfg.CMLevelMusicPlayOrder));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.CMLevelMusicTrack[0].name, static_cast<int>(GameCfg.CMLevelMusicTrack[0]));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.CMLevelMusicTrack[1].name, static_cast<int>(GameCfg.CMLevelMusicTrack[1]));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMLevelMusicPath.name, static_cast<const char *>(GameCfg.CMLevelMusicPath));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_TITLE].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_TITLE]));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_BRIEFING].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_BRIEFING]));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_ENDLEVEL].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_ENDLEVEL]));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_ENDGAME].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_ENDGAME]));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.CMMiscMusic[SONG_CREDITS].name, static_cast<const char *>(GameCfg.CMMiscMusic[SONG_CREDITS]));
+	PHYSFSX_printf(infile, "%s=%d\n", GameCfg.GammaLevel.name, static_cast<int>(GameCfg.GammaLevel));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.LastPlayer.name, static_cast<const char *>(Players[Player_num].callsign));
+	PHYSFSX_printf(infile, "%s=%s\n", GameCfg.LastMission.name, static_cast<const char *>(GameCfg.LastMission));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.ResolutionX.name, SM_W(Game_screen_mode));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.ResolutionY.name, SM_H(Game_screen_mode));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.AspectX.name, static_cast<int>(GameCfg.AspectX));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.AspectY.name, static_cast<int>(GameCfg.AspectY));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.WindowMode.name, static_cast<int>(GameCfg.WindowMode));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.TexFilt.name, static_cast<int>(GameCfg.TexFilt));
 #if defined(DXX_BUILD_DESCENT_II)
-	PHYSFSX_printf(infile, "%s=%i\n", MovieTexFiltStr, GameCfg.MovieTexFilt);
-	PHYSFSX_printf(infile, "%s=%i\n", MovieSubtitlesStr, GameCfg.MovieSubtitles);
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.MovieTexFilt.name, static_cast<int>(GameCfg.MovieTexFilt));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.MovieSubtitles.name, static_cast<int>(GameCfg.MovieSubtitles));
 #endif
-	PHYSFSX_printf(infile, "%s=%i\n", VSyncStr, GameCfg.VSync);
-	PHYSFSX_printf(infile, "%s=%i\n", MultisampleStr, GameCfg.Multisample);
-	PHYSFSX_printf(infile, "%s=%i\n", FPSIndicatorStr, GameCfg.FPSIndicator);
-	PHYSFSX_printf(infile, "%s=%i\n", GrabinputStr, GameCfg.Grabinput);
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.VSync.name, static_cast<int>(GameCfg.VSync));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.Multisample.name, static_cast<int>(GameCfg.Multisample));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.FPSIndicator.name, static_cast<int>(GameCfg.FPSIndicator));
+	PHYSFSX_printf(infile, "%s=%i\n", GameCfg.Grabinput.name, static_cast<int>(GameCfg.Grabinput));
 	return 0;
 }

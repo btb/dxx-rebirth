@@ -354,7 +354,7 @@ int RegisterPlayer()
 		else
 		{
 			// Read the last player's name from config file, not lastplr.txt
-			Players[Player_num].callsign = GameCfg.LastPlayer;
+			Players[Player_num].callsign.copy(GameCfg.LastPlayer, CALLSIGN_LEN - 1);
 		}
 	}
 
@@ -923,7 +923,7 @@ void change_res()
 	nm_set_item_input(m[mc], crestext);
 	modes[mc] = 0; mc++;
 	nm_set_item_text(m[mc], "aspect:"); mc++;
-	snprintf(casptext, sizeof(casptext), "%ix%i", GameCfg.AspectY, GameCfg.AspectX);
+	snprintf(casptext, sizeof(casptext), "%ix%i", static_cast<int>(GameCfg.AspectY), static_cast<int>(GameCfg.AspectX));
 	nm_set_item_input(m[mc], casptext);
 	modes[mc] = 0; mc++;
 	nm_set_item_text(m[mc], ""); mc++; // little space for overview
@@ -1590,7 +1590,7 @@ static int get_absolute_path(char *full_path, const char *rel_path)
 	return 1;
 }
 
-#define SELECT_SONG(t, s)	select_file_recursive(t, GameCfg.CMMiscMusic[s].data(), jukebox_exts, 0, get_absolute_path, GameCfg.CMMiscMusic[s].data())
+#define SELECT_SONG(t, s)	select_file_recursive(t, GameCfg.CMMiscMusic[s], jukebox_exts, 0, get_absolute_path, static_cast<char *>(GameCfg.CMMiscMusic[s]))
 #endif
 
 static int sound_menuset(newmenu *menu,const d_event &event, const unused_newmenu_userdata_t *)
@@ -1677,8 +1677,8 @@ static int sound_menuset(newmenu *menu,const d_event &event, const unused_newmen
 				static const array<file_extension_t, 1> ext_list{"m3u"};		// select a directory or M3U playlist
 				select_file_recursive(
 					"Select directory or\nM3U playlist to\n play level music from" WINDOWS_DRIVE_CHANGE_TEXT,
-									  GameCfg.CMLevelMusicPath.data(), ext_list, 1,	// look in current music path for ext_list files and allow directory selection
-									  get_absolute_path, GameCfg.CMLevelMusicPath.data());	// just copy the absolute path
+					GameCfg.CMLevelMusicPath, ext_list, 1,	// look in current music path for ext_list files and allow directory selection
+					get_absolute_path, static_cast<char *>(GameCfg.CMLevelMusicPath));	// just copy the absolute path
 			}
 			else if (citem == opt_sm_cm_mtype3_file1_b)
 				SELECT_SONG("Select main menu music" WINDOWS_DRIVE_CHANGE_TEXT, SONG_TITLE);
@@ -1791,7 +1791,7 @@ void do_sound_menu()
 	opt_sm_mtype3_lmpath = nitems;
 	nm_set_item_browse(&m[nitems++], "path for level music" BROWSE_TXT);
 
-	nm_set_item_input(m[nitems++], GameCfg.CMLevelMusicPath);
+	nm_set_item_input(m[nitems++], PATH_MAX - 1, GameCfg.CMLevelMusicPath);
 
 	nm_set_item_text(m[nitems++], "");
 
@@ -1814,31 +1814,31 @@ void do_sound_menu()
 	nm_set_item_browse(&m[nitems++], "main menu" BROWSE_TXT);
 
 	opt_sm_cm_mtype3_file1 = nitems;
-	nm_set_item_input(m[nitems++], GameCfg.CMMiscMusic[SONG_TITLE]);
+	nm_set_item_input(m[nitems++], PATH_MAX - 1, GameCfg.CMMiscMusic[SONG_TITLE]);
 
 	opt_sm_cm_mtype3_file2_b = nitems;
 	nm_set_item_browse(&m[nitems++], "briefing" BROWSE_TXT);
 
 	opt_sm_cm_mtype3_file2 = nitems;
-	nm_set_item_input(m[nitems++], GameCfg.CMMiscMusic[SONG_BRIEFING]);
+	nm_set_item_input(m[nitems++], PATH_MAX - 1, GameCfg.CMMiscMusic[SONG_BRIEFING]);
 
 	opt_sm_cm_mtype3_file3_b = nitems;
 	nm_set_item_browse(&m[nitems++], "credits" BROWSE_TXT);
 
 	opt_sm_cm_mtype3_file3 = nitems;
-	nm_set_item_input(m[nitems++], GameCfg.CMMiscMusic[SONG_CREDITS]);
+	nm_set_item_input(m[nitems++], PATH_MAX - 1, GameCfg.CMMiscMusic[SONG_CREDITS]);
 
 	opt_sm_cm_mtype3_file4_b = nitems;
 	nm_set_item_browse(&m[nitems++], "escape sequence" BROWSE_TXT);
 
 	opt_sm_cm_mtype3_file4 = nitems;
-	nm_set_item_input(m[nitems++], GameCfg.CMMiscMusic[SONG_ENDLEVEL]);
+	nm_set_item_input(m[nitems++], PATH_MAX - 1, GameCfg.CMMiscMusic[SONG_ENDLEVEL]);
 
 	opt_sm_cm_mtype3_file5_b = nitems;
 	nm_set_item_browse(&m[nitems++], "game ending" BROWSE_TXT);
 
 	opt_sm_cm_mtype3_file5 = nitems;
-	nm_set_item_input(m[nitems++], GameCfg.CMMiscMusic[SONG_ENDGAME]);
+	nm_set_item_input(m[nitems++], PATH_MAX - 1, GameCfg.CMMiscMusic[SONG_ENDGAME]);
 #endif
 
 	Assert(nitems == SOUND_MENU_NITEMS);
@@ -1846,7 +1846,7 @@ void do_sound_menu()
 	newmenu_do1( NULL, "Sound Effects & Music", nitems, m, sound_menuset, unused_newmenu_userdata, 0 );
 
 #ifdef USE_SDLMIXER
-	if ( ((Game_wind != NULL) && strcmp(old_CMLevelMusicPath.data(), GameCfg.CMLevelMusicPath.data())) || ((Game_wind == NULL) && strcmp(old_CMMiscMusic0.data(), GameCfg.CMMiscMusic[SONG_TITLE].data())) )
+	if ( ((Game_wind != NULL) && strcmp(old_CMLevelMusicPath, GameCfg.CMLevelMusicPath)) || ((Game_wind == NULL) && strcmp(old_CMMiscMusic0, GameCfg.CMMiscMusic[SONG_TITLE])) )
 	{
 		songs_uninit();
 
