@@ -68,8 +68,6 @@ static void cli_free(void)
 		if (CommandLines[i])
 			d_free(CommandLines[i]);
 	}
-
-	d_free(Prompt);
 }
 
 
@@ -80,7 +78,7 @@ void cli_init()
 	CLI_insert_mode = 1;
 	CursorPos = 0;
 	CommandScrollBack = 0;
-	Prompt = d_strdup(CLI_DEFAULT_PROMPT);
+	Prompt = RAIIdmem<char[]>(d_strdup(CLI_DEFAULT_PROMPT)).get();
 
 	CommandLines = {};
 	memset(Command, 0, sizeof(Command));
