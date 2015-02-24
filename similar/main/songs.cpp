@@ -430,10 +430,10 @@ int songs_play_song( int songnum, int repeat )
 
 			Song_playing = -1;
 #if defined(DXX_BUILD_DESCENT_I)
-			int play = songs_play_file(GameCfg.CMMiscMusic[songnum].data(), repeat, NULL);
+			int play = songs_play_file(GameCfg.CMMiscMusic[songnum], repeat, NULL);
 #elif defined(DXX_BUILD_DESCENT_II)
 			int use_credits_track = (songnum == SONG_TITLE && GameCfg.OrigTrackOrder);
-			int play = songs_play_file(GameCfg.CMMiscMusic[songnum].data(),
+			int play = songs_play_file(GameCfg.CMMiscMusic[songnum],
 							  // Play the credits track after the title track and loop the credits track if original CD track order was chosen
 							  use_credits_track ? 0 : repeat,
 							  use_credits_track ? play_credits_track : NULL);
@@ -548,7 +548,7 @@ int songs_play_level_song( int levelnum, int offset )
 
 					// As soon as we start a new level, go to next track
 					if (last_songnum != -1 && songnum != last_songnum)
-						((GameCfg.CMLevelMusicTrack[0]+1>=GameCfg.CMLevelMusicTrack[1])?GameCfg.CMLevelMusicTrack[0]=0:GameCfg.CMLevelMusicTrack[0]++);
+						((GameCfg.CMLevelMusicTrack[0]+1>=GameCfg.CMLevelMusicTrack[1])?GameCfg.CMLevelMusicTrack[0]=0:(GameCfg.CMLevelMusicTrack[0] = GameCfg.CMLevelMusicTrack[0] + 1));
 					last_songnum = songnum;
 				}
 				else if (GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL)
@@ -556,11 +556,11 @@ int songs_play_level_song( int levelnum, int offset )
 			}
 			else
 			{
-				GameCfg.CMLevelMusicTrack[0] += offset;
+				GameCfg.CMLevelMusicTrack[0] = GameCfg.CMLevelMusicTrack[0] + offset;
 				if (GameCfg.CMLevelMusicTrack[0] < 0)
 					GameCfg.CMLevelMusicTrack[0] = GameCfg.CMLevelMusicTrack[1] + GameCfg.CMLevelMusicTrack[0];
 				if (GameCfg.CMLevelMusicTrack[0] + 1 > GameCfg.CMLevelMusicTrack[1])
-					GameCfg.CMLevelMusicTrack[0] = GameCfg.CMLevelMusicTrack[0] - GameCfg.CMLevelMusicTrack[1];
+					GameCfg.CMLevelMusicTrack[0] = static_cast<int>(GameCfg.CMLevelMusicTrack[0]) - static_cast<int>(GameCfg.CMLevelMusicTrack[1]);
 			}
 
 			Song_playing = -1;

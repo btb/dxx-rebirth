@@ -37,32 +37,37 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 struct Cfg : prohibit_void_ptr<Cfg>
 {
-	ubyte DigiVolume;
-	ubyte MusicVolume;
-	int ReverseStereo;
-	int OrigTrackOrder;
-	int MusicType;
-	int CMLevelMusicPlayOrder;
-	int CMLevelMusicTrack[2];
-	ntstring<PATH_MAX - 1> CMLevelMusicPath;
-	array<ntstring<PATH_MAX - 1>, 5> CMMiscMusic;
-	int GammaLevel;
-	callsign_t LastPlayer;
-	char LastMission[MISSION_NAME_LEN+1];
-	int ResolutionX;
-	int ResolutionY;
-	int AspectX;
-	int AspectY;
-	int WindowMode;
-	int TexFilt;
-	int VSync;
-	int Multisample;
-	int FPSIndicator;
-	int Grabinput;
-#ifdef DXX_BUILD_DESCENT_II
-	int MovieTexFilt;
-	int MovieSubtitles;
+	cvar_t DigiVolume             = { "DigiVolume",            "0", CVAR_ARCHIVE };
+	cvar_t MusicVolume            = { "MusicVolume",           "0", CVAR_ARCHIVE };
+	cvar_t ReverseStereo          = { "ReverseStereo",         "0", CVAR_ARCHIVE };
+	cvar_t OrigTrackOrder         = { "OrigTrackOrder",        "0", CVAR_ARCHIVE };
+	cvar_t MusicType              = { "MusicType",             "0", CVAR_ARCHIVE };
+	cvar_t CMLevelMusicPlayOrder  = { "CMLevelMusicPlayOrder", "0", CVAR_ARCHIVE };
+	cvar_t CMLevelMusicTrack[2] = { { "CMLevelMusicTrack0",    "0", CVAR_ARCHIVE },
+	                                { "CMLevelMusicTrack1",    "0", CVAR_ARCHIVE } };
+	cvar_t CMLevelMusicPath       = { "CMLevelMusicPath",      "0", CVAR_ARCHIVE };
+	cvar_t CMMiscMusic[5]       = { { "CMMiscMusic0",          "0", CVAR_ARCHIVE },
+	                                { "CMMiscMusic1",          "0", CVAR_ARCHIVE },
+	                                { "CMMiscMusic2",          "0", CVAR_ARCHIVE },
+	                                { "CMMiscMusic3",          "0", CVAR_ARCHIVE },
+	                                { "CMMiscMusic4",          "0", CVAR_ARCHIVE } };
+	cvar_t GammaLevel             = { "GammaLevel",            "0", CVAR_ARCHIVE };
+	cvar_t LastPlayer             = { "LastPlayer",            "0", CVAR_ARCHIVE };
+	cvar_t LastMission            = { "LastMission",           "0", CVAR_ARCHIVE };
+	cvar_t ResolutionX            = { "ResolutionX",           "0", CVAR_ARCHIVE };
+	cvar_t ResolutionY            = { "ResolutionY",           "0", CVAR_ARCHIVE };
+	cvar_t AspectX                = { "AspectX",               "0", CVAR_ARCHIVE };
+	cvar_t AspectY                = { "AspectY",               "0", CVAR_ARCHIVE };
+	cvar_t WindowMode             = { "WindowMode",            "0", CVAR_ARCHIVE };
+	cvar_t TexFilt                = { "TexFilt",               "0", CVAR_ARCHIVE };
+#if defined(DXX_BUILD_DESCENT_II)
+	cvar_t MovieTexFilt           = { "MovieTexFilt",          "0", CVAR_ARCHIVE };
+	cvar_t MovieSubtitles         = { "MovieSubtitles",        "0", CVAR_ARCHIVE };
 #endif
+	cvar_t VSync                  = { "VSync",                 "0", CVAR_ARCHIVE };
+	cvar_t Multisample            = { "Multisample",           "0", CVAR_ARCHIVE };
+	cvar_t FPSIndicator           = { "FPSIndicator",          "0", CVAR_ARCHIVE };
+	cvar_t Grabinput              = { "GrabInput",             "0", CVAR_ARCHIVE };
 };
 
 extern struct Cfg GameCfg;
