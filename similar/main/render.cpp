@@ -123,6 +123,7 @@ static objnum_t found_obj;
 static const int _search_mode = 0;
 #endif
 
+#ifndef RELEASE
 #ifdef NDEBUG		//if no debug code, set these vars to constants
 
 static const int Outline_mode = 0, Show_only_curside = 0;
@@ -155,6 +156,7 @@ static void draw_outline(int nverts,cg3s_point *const *const pointlist)
 	g3_draw_line(*pointlist[i],*pointlist[0]);
 
 }
+#endif
 #endif
 
 fix flash_scale;
