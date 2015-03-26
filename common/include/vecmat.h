@@ -174,12 +174,10 @@ public:
 	}
 };
 
-#if 0
 static constexpr vm_distance_squared operator*(const vm_distance &a, const vm_distance &b)
 {
 	return vm_distance_squared{static_cast<fix64>(static_cast<fix>(a)) * static_cast<fix64>(static_cast<fix>(b))};
 }
-#endif
 
 #define DEFINE_SERIAL_VMS_VECTOR_TO_MESSAGE()	\
 	DEFINE_SERIAL_UDT_TO_MESSAGE(vms_vector, v, (v.x, v.y, v.z));	\
