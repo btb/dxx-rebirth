@@ -123,12 +123,8 @@ static objnum_t found_obj;
 static const int _search_mode = 0;
 #endif
 
-#ifdef NDEBUG		//if no debug code, set these vars to constants
 
-const int Show_only_curside = 0;
-
-#else
-
+#ifndef NDEBUG
 int Outline_mode=0,Show_only_curside=0;
 
 int toggle_outline_mode(void)
@@ -140,9 +136,7 @@ int toggle_show_only_curside(void)
 {
 	return Show_only_curside = !Show_only_curside;
 }
-#endif
 
-#ifndef NDEBUG
 static void draw_outline(int nverts,cg3s_point *const *const pointlist)
 {
 	int i;
@@ -1484,7 +1478,7 @@ void render_mine(segnum_t start_seg_num,fix eye_offset, window_rendered_data &wi
 
 	visited_twobit_array_t visited;
 
-	#if defined(EDITOR)
+	#if defined(EDITOR) && !defined(NDEBUG)
 	if (Show_only_curside) {
 		rotate_list(Cursegp->verts);
 		render_side(Cursegp,Curside);
