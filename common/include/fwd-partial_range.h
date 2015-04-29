@@ -39,10 +39,10 @@ static inline partial_range_t<I> partial_const_range(const char (&file)[NF], uns
  * will outlive the rvalue.
  */
 template <typename T, typename UO, typename UL, std::size_t NF, std::size_t NE, typename I = decltype(begin(std::declval<T &&>()))>
-static inline partial_range_t<I> partial_const_range(const char (&file)[NF], unsigned line, const char (&estr)[NE], T &&t, const UO &o, const UL &l) = delete;
+static inline partial_range_t<I> partial_const_range(const char (&file)[NF] __attribute_unused, unsigned line __attribute_unused, const char (&estr)[NE] __attribute_unused, T &&t __attribute_unused, const UO &o __attribute_unused, const UL &l __attribute_unused) = delete;
 
 template <typename T, typename UL, std::size_t NF, std::size_t NE, typename I = decltype(begin(std::declval<T &&>()))>
-static inline partial_range_t<I> partial_const_range(const char (&file)[NF], unsigned line, const char (&estr)[NE], T &&t, const UL &l) = delete;
+static inline partial_range_t<I> partial_const_range(const char (&file)[NF] __attribute_unused, unsigned line __attribute_unused, const char (&estr)[NE] __attribute_unused, T &&t __attribute_unused, const UL &l __attribute_unused) = delete;
 
 #define partial_range(T,...)	partial_range(__FILE__, __LINE__, #T, T, ##__VA_ARGS__)
 #define partial_const_range(T,...)	partial_const_range(__FILE__, __LINE__, #T, T, ##__VA_ARGS__)
