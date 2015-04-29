@@ -18,6 +18,7 @@
 #ifdef __cplusplus
 #include <cstddef>
 #include "dxxsconf.h"
+#include "compiler-array.h"
 
 void d_srand (unsigned int seed);
 __attribute_warn_unused_result
@@ -124,24 +125,31 @@ u_int32_t quad_sqrt (quadint);
 __attribute_warn_unused_result
 fix fix_sqrt (fix a);
 
+struct fix_sincos_result
+{
+	fix sin, cos;
+};
+
+__attribute_warn_unused_result
+fix_sincos_result fix_sincos(fix);
+
 //compute sine and cosine of an angle, filling in the variables
 //either of the pointers can be NULL
-void fix_sincos (fix a, fix * s, fix * c);	//with interpolation
+static inline void fix_sincos (fix a, fix *s, fix *c)	//with interpolation
+{
+	const auto &r = fix_sincos(a);
+	if (s)
+		*s = r.sin;
+	if (c)
+		*c = r.cos;
+}
 void fix_sincos(fix, std::nullptr_t, std::nullptr_t) = delete;
 
 __attribute_warn_unused_result
-static inline fix fix_sin(fix a)
-{
-	fix s;
-	return fix_sincos(a, &s, nullptr), s;
-}
+fix fix_sin(fix a);
 
 __attribute_warn_unused_result
-static inline fix fix_cos(fix a)
-{
-	fix c;
-	return fix_sincos(a, nullptr, &c), c;
-}
+fix fix_cos(fix a);
 
 __attribute_warn_unused_result
 fix fix_fastsin(fix a);	//no interpolation
@@ -164,11 +172,10 @@ fixang fix_atan2 (fix cos, fix sin);
 __attribute_warn_unused_result
 int checkmuldiv(fix *r,fix a,fix b,fix c);
 
-extern const ubyte guess_table[256];
-extern const short sincos_table[321];
-extern const ushort asin_table[258];
-extern const ushort acos_table[258];
-
+extern const array<ubyte, 256> guess_table;
+extern const array<short, 321> sincos_table;
+extern const array<ushort, 258> asin_table;
+extern const array<ushort, 258> acos_table;
 
 static inline void clamp_fix_lh(fix& f, const fix& low, const fix& high)
 {

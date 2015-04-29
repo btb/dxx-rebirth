@@ -25,7 +25,9 @@
 #include "console.h"
 #include "strutil.h"
 #include "ignorecase.h"
+#include "physfs_list.h"
 
+#include "compiler-range_for.h"
 #include "poison.h"
 
 const array<file_extension_t, 1> archive_exts{{"dxa"}};
@@ -284,18 +286,14 @@ int PHYSFSX_fsize(const char *hogname)
 
 void PHYSFSX_listSearchPathContent()
 {
-	char **i, **list;
-
 	con_printf(CON_DEBUG, "PHYSFS: Listing contents of Search Path.");
-	list = PHYSFS_getSearchPath();
-	for (i = list; *i != NULL; i++)
-		con_printf(CON_DEBUG, "PHYSFS: [%s] is in the Search Path.", *i);
-	PHYSFS_freeList(list);
-
-	list = PHYSFS_enumerateFiles("");
-	for (i = list; *i != NULL; i++)
-		con_printf(CON_DEBUG, "PHYSFS: * We've got [%s].", *i);
-	PHYSFS_freeList(list);
+	PHYSFS_list_t list{PHYSFS_getSearchPath()};
+	range_for (const auto i, list)
+		con_printf(CON_DEBUG, "PHYSFS: [%s] is in the Search Path.", i);
+	list.reset();
+	list.reset(PHYSFS_enumerateFiles(""));
+	range_for (const auto i, list)
+		con_printf(CON_DEBUG, "PHYSFS: * We've got [%s].", i);
 }
 
 // checks which archives are supported by PhysFS. Return 0 if some essential (HOG) is not supported
@@ -377,18 +375,15 @@ int PHYSFSX_getRealPath(const char *stdPath, char *realPath)
 int PHYSFSX_isNewPath(const char *path)
 {
 	int is_new_path = 1;
-	char **i, **list;
-	
-	list = PHYSFS_getSearchPath();
-	for (i = list; *i != NULL; i++)
+	PHYSFS_list_t list{PHYSFS_getSearchPath()};
+	range_for (const auto i, list)
 	{
-		if (!strcmp(path, *i))
+		if (!strcmp(path, i))
 		{
 			is_new_path = 0;
+			break;
 		}
 	}
-	PHYSFS_freeList(list);
-	
 	return is_new_path;
 }
 
@@ -408,12 +403,12 @@ static inline PHYSFS_list_t PHYSFSX_findPredicateFiles(const char *path, F f)
 	if (!list)
 		return nullptr;	// out of memory: not so good
 	char **j = list.get();
-	for (auto i = j; *i; ++i)
+	range_for (const auto i, list)
 	{
-		if (f(*i))
-			*j++ = *i;
+		if (f(i))
+			*j++ = i;
 		else
-			free(*i);
+			free(i);
 	}
 	*j = NULL;
 	char **r = reinterpret_cast<char **>(realloc(list.get(), (j - list.get() + 1)*sizeof(char *)));	// save a bit of memory (or a lot?)
@@ -527,10 +522,10 @@ void PHYSFSX_addArchiveContent()
 	// find files in Searchpath ...
 	auto list = PHYSFSX_findFiles("", archive_exts);
 	// if found, add them...
-	for (int i = 0; list[i] != NULL; i++)
+	range_for (const auto i, list)
 	{
 		char realfile[PATH_MAX];
-		PHYSFSX_getRealPath(list[i],realfile);
+		PHYSFSX_getRealPath(i,realfile);
 		if (PHYSFS_addToSearchPath(realfile, 0))
 		{
 			con_printf(CON_DEBUG, "PHYSFS: Added %s to Search Path",realfile);
@@ -542,14 +537,14 @@ void PHYSFSX_addArchiveContent()
 	// find files in DEMO_DIR ...
 	list = PHYSFSX_findFiles(DEMO_DIR, archive_exts);
 	// if found, add them...
-	for (int i = 0; list[i] != NULL; i++)
+	range_for (const auto i, list)
 	{
 		char demofile[PATH_MAX], realfile[PATH_MAX];
-		snprintf(demofile, sizeof(demofile), "%s%s", DEMO_DIR, list[i]);
+		snprintf(demofile, sizeof(demofile), DEMO_DIR "%s", i);
 		PHYSFSX_getRealPath(demofile,realfile);
 		if (PHYSFS_mount(realfile, DEMO_DIR, 0))
 		{
-			con_printf(CON_DEBUG, "PHYSFS: Added %s to %s",realfile, DEMO_DIR);
+			con_printf(CON_DEBUG, "PHYSFS: Added %s to " DEMO_DIR, realfile);
 			content_updated = 1;
 		}
 	}
@@ -569,20 +564,20 @@ void PHYSFSX_removeArchiveContent()
 	// find files in Searchpath ...
 	auto list = PHYSFSX_findFiles("", archive_exts);
 	// if found, remove them...
-	for (int i = 0; list[i] != NULL; i++)
+	range_for (const auto i, list)
 	{
 		char realfile[PATH_MAX];
-		PHYSFSX_getRealPath(list[i],realfile);
+		PHYSFSX_getRealPath(i, realfile);
 		PHYSFS_removeFromSearchPath(realfile);
 	}
 	list.reset();
 	// find files in DEMO_DIR ...
 	list = PHYSFSX_findFiles(DEMO_DIR, archive_exts);
 	// if found, remove them...
-	for (int i = 0; list[i] != NULL; i++)
+	range_for (const auto i, list)
 	{
 		char demofile[PATH_MAX], realfile[PATH_MAX];
-		snprintf(demofile, sizeof(demofile), "%s%s", DEMO_DIR, list[i]);
+		snprintf(demofile, sizeof(demofile), DEMO_DIR "%s", i);
 		PHYSFSX_getRealPath(demofile,realfile);
 		PHYSFS_removeFromSearchPath(realfile);
 	}

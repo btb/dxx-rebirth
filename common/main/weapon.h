@@ -23,8 +23,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
-#ifndef _WEAPON_H
-#define _WEAPON_H
+#pragma once
 
 #include "game.h"
 #include "piggy.h"
@@ -35,6 +34,68 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "objnum.h"
 #include "pack.h"
 #include "fwdvalptridx.h"
+
+#include "compiler-type_traits.h"
+
+enum powerup_type_t : uint8_t;
+
+enum laser_level_t : uint8_t
+{
+	LASER_LEVEL_1,
+	LASER_LEVEL_2,
+	LASER_LEVEL_3,
+	LASER_LEVEL_4,
+#if defined(DXX_BUILD_DESCENT_II)
+#define LASER_HELIX_FLAG0           4   // helix uses 3 bits for angle
+#define LASER_HELIX_FLAG1           8   // helix uses 3 bits for angle
+#define LASER_HELIX_FLAG2           16  // helix uses 3 bits for angle
+#define LASER_HELIX_SHIFT       2   // how far to shift count to put in flags
+#define LASER_HELIX_MASK        7   // must match number of bits in flags
+	LASER_LEVEL_5,
+	LASER_LEVEL_6,
+#define MAX_SUPER_LASER_LEVEL   LASER_LEVEL_6   // Note, laser levels are numbered from 0.
+#endif
+};
+
+class stored_laser_level
+{
+	laser_level_t m_level;
+public:
+	stored_laser_level() = default;
+	constexpr stored_laser_level(const laser_level_t l) :
+		m_level(l)
+	{
+	}
+	constexpr explicit stored_laser_level(uint8_t i) :
+		m_level(static_cast<laser_level_t>(i))
+	{
+	}
+	operator laser_level_t() const
+	{
+		return m_level;
+	}
+	/* Assume no overflow/underflow.
+	 * This was never checked when it was a simple ubyte.
+	 */
+	stored_laser_level &operator+=(uint8_t i)
+	{
+		m_level = static_cast<laser_level_t>(static_cast<uint8_t>(m_level) + i);
+		return *this;
+	}
+	stored_laser_level &operator-=(uint8_t i)
+	{
+		m_level = static_cast<laser_level_t>(static_cast<uint8_t>(m_level) - i);
+		return *this;
+	}
+	stored_laser_level &operator++()
+	{
+		return *this += 1;
+	}
+	stored_laser_level &operator--()
+	{
+		return *this -= 1;
+	}
+};
 
 #if defined(DXX_BUILD_DESCENT_I) || defined(DXX_BUILD_DESCENT_II)
 struct weapon_info : prohibit_void_ptr<weapon_info>
@@ -178,14 +239,13 @@ const unsigned MAX_PRIMARY_WEAPONS = 10;
 const unsigned MAX_SECONDARY_WEAPONS = 10;
 #endif
 
-extern const ubyte Primary_weapon_to_weapon_info[MAX_PRIMARY_WEAPONS];
-extern const ubyte Secondary_weapon_to_weapon_info[MAX_SECONDARY_WEAPONS];
+extern const array<ubyte, MAX_PRIMARY_WEAPONS> Primary_weapon_to_weapon_info;
 //for each primary weapon, what kind of powerup gives weapon
-extern const ubyte Primary_weapon_to_powerup[MAX_PRIMARY_WEAPONS];
-
+extern const array<powerup_type_t, MAX_PRIMARY_WEAPONS> Primary_weapon_to_powerup;
+extern const array<ubyte, MAX_SECONDARY_WEAPONS> Secondary_weapon_to_weapon_info;
 //for each Secondary weapon, what kind of powerup gives weapon
-extern const ubyte Secondary_weapon_to_powerup[MAX_SECONDARY_WEAPONS];
-extern const ubyte    Secondary_ammo_max[MAX_SECONDARY_WEAPONS];
+extern const array<powerup_type_t, MAX_SECONDARY_WEAPONS> Secondary_weapon_to_powerup;
+extern const array<ubyte, MAX_SECONDARY_WEAPONS>    Secondary_ammo_max;
 /*
  * reads n weapon_info structs from a PHYSFS_file
  */
@@ -214,7 +274,7 @@ void weapon_info_read_n(weapon_info_array &wi, std::size_t count, PHYSFS_File *f
 #define CLASS_PRIMARY       0
 #define CLASS_SECONDARY     1
 
-enum primary_weapon_index_t
+enum primary_weapon_index_t : uint8_t
 {
 	LASER_INDEX = 0,
 	VULCAN_INDEX = 1,
@@ -227,6 +287,7 @@ enum primary_weapon_index_t
 	HELIX_INDEX = 7,
 	PHOENIX_INDEX = 8,
 	OMEGA_INDEX = 9,
+#define HAS_SUPER_LASER_FLAG	HAS_PRIMARY_FLAG(SUPER_LASER_INDEX)
 #define HAS_GAUSS_FLAG     HAS_PRIMARY_FLAG(GAUSS_INDEX)
 #define HAS_HELIX_FLAG     HAS_PRIMARY_FLAG(HELIX_INDEX)
 #define HAS_PHOENIX_FLAG   HAS_PRIMARY_FLAG(PHOENIX_INDEX)
@@ -267,34 +328,60 @@ enum secondary_weapon_index_t
 };
 
 extern unsigned N_weapon_types;
-extern void do_weapon_select(int weapon_num, int secondary_flag);
+void do_primary_weapon_select(uint_fast32_t weapon_num);
+void do_secondary_weapon_select(uint_fast32_t weapon_num);
 
-extern sbyte Primary_weapon, Secondary_weapon;
+extern primary_weapon_index_t Primary_weapon;
+extern sbyte Secondary_weapon;
 
-extern void auto_select_weapon(int weapon_type);        //parm is primary or secondary
-extern void select_weapon(int weapon_num, int secondary_flag, int print_message,int wait_for_rearm);
+void auto_select_primary_weapon();
+void auto_select_secondary_weapon();
+void select_primary_weapon(const char *weapon_name, uint_fast32_t weapon_num, int wait_for_rearm);
+void select_secondary_weapon(const char *weapon_name, uint_fast32_t weapon_num, int wait_for_rearm);
 
 #if defined(DXX_BUILD_DESCENT_I) || defined(DXX_BUILD_DESCENT_II)
 //for each Secondary weapon, which gun it fires out of
-extern const ubyte Secondary_weapon_to_gun_num[MAX_SECONDARY_WEAPONS];
+extern const array<ubyte, MAX_SECONDARY_WEAPONS> Secondary_weapon_to_gun_num;
 #endif
 
 #if defined(DXX_BUILD_DESCENT_II)
 //flags whether the last time we use this weapon, it was the 'super' version
-extern ubyte Primary_last_was_super[MAX_PRIMARY_WEAPONS];
-extern ubyte Secondary_last_was_super[MAX_SECONDARY_WEAPONS];
-
-extern const char *const Primary_weapon_names_short[];
-extern const char *const Secondary_weapon_names_short[];
-extern const char *const Primary_weapon_names[];
-extern const char *const Secondary_weapon_names[];
-extern const sbyte    Weapon_is_energy[MAX_WEAPON_TYPES];
+extern array<uint8_t, MAX_PRIMARY_WEAPONS> Primary_last_was_super;
+extern array<uint8_t, MAX_SECONDARY_WEAPONS> Secondary_last_was_super;
 #endif
 
-#define HAS_WEAPON_FLAG 1
-#define HAS_ENERGY_FLAG 2
-#define HAS_AMMO_FLAG       4
-#define  HAS_ALL (HAS_WEAPON_FLAG|HAS_ENERGY_FLAG|HAS_AMMO_FLAG)
+class has_weapon_result
+{
+	uint8_t m_result;
+public:
+	static constexpr tt::integral_constant<uint8_t, 1> has_weapon_flag{};
+	static constexpr tt::integral_constant<uint8_t, 2> has_energy_flag{};
+	static constexpr tt::integral_constant<uint8_t, 4> has_ammo_flag{};
+	has_weapon_result() = default;
+	constexpr has_weapon_result(uint8_t r) : m_result(r)
+	{
+	}
+	uint8_t has_weapon() const
+	{
+		return m_result & has_weapon_flag;
+	}
+	uint8_t has_energy() const
+	{
+		return m_result & has_energy_flag;
+	}
+	uint8_t has_ammo() const
+	{
+		return m_result & has_ammo_flag;
+	}
+	uint8_t flags() const
+	{
+		return m_result;
+	}
+	bool has_all() const
+	{
+		return m_result == (has_weapon_flag | has_energy_flag | has_ammo_flag);
+	}
+};
 
 //-----------------------------------------------------------------------------
 // Return:
@@ -302,8 +389,12 @@ extern const sbyte    Weapon_is_energy[MAX_WEAPON_TYPES];
 //      HAS_WEAPON_FLAG
 //      HAS_ENERGY_FLAG
 //      HAS_AMMO_FLAG
-//      HAS_SUPER_FLAG
-extern int player_has_weapon(int weapon_num, int secondary_flag);
+has_weapon_result player_has_primary_weapon(int weapon_num);
+has_weapon_result player_has_secondary_weapon(int weapon_num);
+static inline has_weapon_result player_has_weapon(int weapon_num, int secondary_flag)
+{
+	return secondary_flag ? player_has_secondary_weapon(weapon_num) : player_has_primary_weapon(weapon_num);
+}
 
 //called when one of these weapons is picked up
 //when you pick up a secondary, you always get the weapon & ammo for it
@@ -314,7 +405,7 @@ int pick_up_secondary(int weapon_index,int count);
 int pick_up_primary(int weapon_index);
 
 //called when ammo (for the vulcan cannon) is picked up
-int pick_up_ammo(int class_flag,int weapon_index,int ammo_count);
+int pick_up_vulcan_ammo(uint_fast32_t ammo_count, bool change_weapon = true);
 
 #if defined(DXX_BUILD_DESCENT_II)
 int attempt_to_steal_item(vobjptridx_t objp, int player_num);
@@ -334,7 +425,7 @@ void CyclePrimary();
 void CycleSecondary();
 void ReorderPrimary();
 void ReorderSecondary();
-void check_to_use_primary(int);
+void check_to_use_primary_super_laser();
 void init_seismic_disturbances(void);
 void process_super_mines_frame(void);
 void DropCurrentWeapon();
@@ -370,8 +461,6 @@ static inline int weapon_index_is_player_bomb(unsigned id)
 {
 	return id == PROXIMITY_INDEX || id == SMART_MINE_INDEX;
 }
-#endif
-
 #endif
 
 #endif

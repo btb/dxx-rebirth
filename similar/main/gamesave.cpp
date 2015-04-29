@@ -257,7 +257,7 @@ static void verify_object(const vobjptr_t obj)
 
 	if ( obj->type == OBJ_POWERUP ) {
 		if ( get_powerup_id(obj) >= N_powerup_types )	{
-			set_powerup_id(obj, 0);
+			set_powerup_id(obj, POW_SHIELD_BOOST);
 			Assert( obj->render_type != RT_POLYOBJ );
 		}
 		obj->control_type = CT_POWERUP;
@@ -268,18 +268,8 @@ static void verify_object(const vobjptr_t obj)
 
 		if (Game_mode & GM_NETWORK)
 		{
-			if (multi_powerup_is_4pack(get_powerup_id(obj)))
-			{
-				PowerupsInMine[obj->id-1]+=4;
-				MaxPowerupsAllowed[obj->id-1]+=4;
-			}
-			else
-			{
-				PowerupsInMine[get_powerup_id(obj)]++;
-				MaxPowerupsAllowed[get_powerup_id(obj)]++;
-			}
+			PowerupCaps.inc_powerup_both(get_powerup_id(obj));
 		}
-
 	}
 
 	if ( obj->type == OBJ_WEAPON )	{
@@ -430,7 +420,7 @@ static void read_object(const vobjptr_t obj,PHYSFS_file *f,int version)
 	switch (obj->control_type) {
 
 		case CT_AI: {
-			obj->ctype.ai_info.behavior				= PHYSFSX_readByte(f);
+			obj->ctype.ai_info.behavior				= static_cast<ai_behavior>(PHYSFSX_readByte(f));
 
 			range_for (auto &i, obj->ctype.ai_info.flags)
 				i = PHYSFSX_readByte(f);
@@ -672,7 +662,7 @@ static void write_object(const vcobjptr_t obj, short version, PHYSFS_file *f)
 	switch (obj->control_type) {
 
 		case CT_AI: {
-			PHYSFSX_writeU8(f, obj->ctype.ai_info.behavior);
+			PHYSFSX_writeU8(f, static_cast<uint8_t>(obj->ctype.ai_info.behavior));
 
 			range_for (auto &i, obj->ctype.ai_info.flags)
 				PHYSFSX_writeU8(f, i);
@@ -1187,8 +1177,7 @@ int load_level(const char * filename_passed)
 
    if (Game_mode & GM_NETWORK)
 	 {
-		 MaxPowerupsAllowed = {};
-		 PowerupsInMine = {};
+		 PowerupCaps.clear();
 	 }
 
 

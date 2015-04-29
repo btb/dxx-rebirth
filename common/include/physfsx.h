@@ -69,6 +69,7 @@
 	DXX_PHYSFS_CHECK_WRITE_SIZE_ARRAY_SIZE(S,C), 0))	\
 
 template <typename V>
+__attribute_always_inline()
 static inline typename tt::enable_if<tt::is_integral<V>::value, PHYSFS_sint64>::type PHYSFSX_check_read(PHYSFS_file *file, V *v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	static_assert(tt::is_pod<V>::value, "non-POD integral value read");
@@ -77,6 +78,7 @@ static inline typename tt::enable_if<tt::is_integral<V>::value, PHYSFS_sint64>::
 }
 
 template <typename V>
+__attribute_always_inline()
 static inline typename tt::enable_if<!tt::is_integral<V>::value, PHYSFS_sint64>::type PHYSFSX_check_read(PHYSFS_file *file, V *v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	static_assert(tt::is_pod<V>::value, "non-POD non-integral value read");
@@ -85,6 +87,7 @@ static inline typename tt::enable_if<!tt::is_integral<V>::value, PHYSFS_sint64>:
 }
 
 template <typename V>
+__attribute_always_inline()
 static inline typename tt::enable_if<tt::is_array<V>::value, PHYSFS_sint64>::type PHYSFSX_check_read(PHYSFS_file *file, V &v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	typedef typename tt::remove_extent<V>::type V0;
@@ -94,6 +97,7 @@ static inline typename tt::enable_if<tt::is_array<V>::value, PHYSFS_sint64>::typ
 }
 
 template <typename V, std::size_t N>
+__attribute_always_inline()
 static inline PHYSFS_sint64 PHYSFSX_check_read(PHYSFS_file *file, array<V, N> &v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	static_assert(tt::is_pod<V>::value, "C++ array of non-POD elements read");
@@ -102,18 +106,14 @@ static inline PHYSFS_sint64 PHYSFSX_check_read(PHYSFS_file *file, array<V, N> &v
 }
 
 template <typename V, typename D>
+__attribute_always_inline()
 static inline PHYSFS_sint64 PHYSFSX_check_read(PHYSFS_file *file, const std::unique_ptr<V, D> &v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	return PHYSFSX_check_read(file, v.get(), S, C);
 }
 
 template <typename V>
-static inline PHYSFS_sint64 PHYSFSX_check_read(PHYSFS_file *file, const RAIIdmem<V> &v, PHYSFS_uint32 S, PHYSFS_uint32 C)
-{
-	return PHYSFSX_check_read(file, v.get(), S, C);
-}
-
-template <typename V>
+__attribute_always_inline()
 static inline typename tt::enable_if<tt::is_integral<V>::value, PHYSFS_sint64>::type PHYSFSX_check_write(PHYSFS_file *file, const V *v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	static_assert(tt::is_pod<V>::value, "non-POD integral value written");
@@ -123,6 +123,7 @@ static inline typename tt::enable_if<tt::is_integral<V>::value, PHYSFS_sint64>::
 }
 
 template <typename V>
+__attribute_always_inline()
 static inline typename tt::enable_if<!tt::is_integral<V>::value, PHYSFS_sint64>::type PHYSFSX_check_write(PHYSFS_file *file, const V *v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	static_assert(tt::is_pod<V>::value, "non-POD non-integral value written");
@@ -131,6 +132,7 @@ static inline typename tt::enable_if<!tt::is_integral<V>::value, PHYSFS_sint64>:
 }
 
 template <typename V, std::size_t N>
+__attribute_always_inline()
 static inline typename tt::enable_if<tt::is_array<V>::value, PHYSFS_sint64>::type PHYSFSX_check_write(PHYSFS_file *file, const V (&v)[N], PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	typedef typename tt::remove_extent<V>::type V0;
@@ -140,6 +142,7 @@ static inline typename tt::enable_if<tt::is_array<V>::value, PHYSFS_sint64>::typ
 }
 
 template <typename V, std::size_t N>
+__attribute_always_inline()
 static inline PHYSFS_sint64 PHYSFSX_check_write(PHYSFS_file *file, const array<V, N> &v, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	static_assert(tt::is_pod<V>::value, "C++ array of non-POD elements written");
@@ -148,15 +151,10 @@ static inline PHYSFS_sint64 PHYSFSX_check_write(PHYSFS_file *file, const array<V
 }
 
 template <typename T, typename D>
+__attribute_always_inline()
 static inline PHYSFS_sint64 PHYSFSX_check_write(PHYSFS_file *file, const std::unique_ptr<T, D> &p, PHYSFS_uint32 S, PHYSFS_uint32 C)
 {
 	return PHYSFSX_check_write(file, p.get(), S, C);
-}
-
-template <typename V>
-static inline PHYSFS_sint64 PHYSFSX_check_write(PHYSFS_file *file, const RAIIdmem<V> &v, PHYSFS_uint32 S, PHYSFS_uint32 C)
-{
-	return PHYSFSX_check_write(file, v.get(), S, C);
 }
 
 template <typename V>
@@ -467,17 +465,6 @@ public:
 		bool operator!=(T) const = delete;
 };
 
-class PHYSFS_list_deleter
-{
-public:
-	void operator()(char **list) const
-	{
-		PHYSFS_freeList(list);
-	}
-};
-
-typedef std::unique_ptr<char *[], PHYSFS_list_deleter> PHYSFS_list_t;
-
 typedef char file_extension_t[5];
 __attribute_nonnull()
 __attribute_warn_unused_result
@@ -499,30 +486,6 @@ extern int PHYSFSX_checkSupportedArchiveTypes();
 extern int PHYSFSX_getRealPath(const char *stdPath, char *realPath);
 extern int PHYSFSX_isNewPath(const char *path);
 extern int PHYSFSX_rename(const char *oldpath, const char *newpath);
-
-__attribute_nonnull()
-__attribute_warn_unused_result
-PHYSFS_list_t PHYSFSX_findFiles(const char *path, const file_extension_t *exts, uint_fast32_t count);
-
-template <std::size_t count>
-__attribute_nonnull()
-__attribute_warn_unused_result
-static inline PHYSFS_list_t PHYSFSX_findFiles(const char *path, const array<file_extension_t, count> &exts)
-{
-	return PHYSFSX_findFiles(path, exts.data(), count);
-}
-
-__attribute_nonnull()
-__attribute_warn_unused_result
-PHYSFS_list_t PHYSFSX_findabsoluteFiles(const char *path, const char *realpath, const file_extension_t *exts, uint_fast32_t count);
-
-template <std::size_t count>
-__attribute_nonnull()
-__attribute_warn_unused_result
-static inline PHYSFS_list_t PHYSFSX_findabsoluteFiles(const char *path, const char *realpath, const array<file_extension_t, count> &exts)
-{
-	return PHYSFSX_findabsoluteFiles(path, realpath, exts.data(), count);
-}
 
 extern PHYSFS_sint64 PHYSFSX_getFreeDiskSpace();
 extern int PHYSFSX_exists(const char *filename, int ignorecase);

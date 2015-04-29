@@ -297,6 +297,7 @@ vms_vector &vm_vec_scale (vms_vector &dest, fix s);
 void vm_vec_divide(vms_vector &dest, const vms_vector &src, fix d);
 
 //scales and copies a vector.  returns ptr to dest
+#define vm_vec_copy_scale(A,B,...)	vm_vec_copy_scale(A, ## __VA_ARGS__, B)
 vms_vector &vm_vec_copy_scale (vms_vector &dest, const vms_vector &src, fix s);
 static inline vms_vector vm_vec_copy_scale(vms_vector src, fix s) __attribute_warn_unused_result;
 static inline vms_vector vm_vec_copy_scale(vms_vector src, fix s)
@@ -349,6 +350,7 @@ __attribute_warn_unused_result
 vm_distance vm_vec_dist_quick(const vms_vector &v0, const vms_vector &v1);
 
 //normalize a vector. returns mag of source vec
+__attribute_warn_unused_result
 vm_magnitude vm_vec_copy_normalize(vms_vector &dest, const vms_vector &src);
 
 vm_magnitude vm_vec_normalize(vms_vector &v);

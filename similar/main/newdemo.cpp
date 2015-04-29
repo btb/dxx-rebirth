@@ -50,13 +50,14 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "render.h"
 #include "wall.h"
 #include "vclip.h"
-#include "polyobj.h"
+#include "robot.h"
 #include "fireball.h"
 #include "laser.h"
 #include "dxxerror.h"
 #include "ai.h"
 #include "hostage.h"
 #include "morph.h"
+#include "physfs_list.h"
 
 #include "powerup.h"
 #include "fuelcen.h"
@@ -67,6 +68,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "lighting.h"
 #include "newdemo.h"
 #include "gameseq.h"
+#include "hudmsg.h"
 #include "gamesave.h"
 #include "gamemine.h"
 #include "switch.h"
@@ -222,9 +224,9 @@ static fix64 nd_record_v_recordframe_last_time = 0;
 static sbyte nd_record_v_no_space;
 #if defined(DXX_BUILD_DESCENT_II)
 static int nd_record_v_juststarted = 0;
-static sbyte nd_record_v_objs[MAX_OBJECTS];
-static sbyte nd_record_v_viewobjs[MAX_OBJECTS];
-static sbyte nd_record_v_rendering[32];
+static array<sbyte, MAX_OBJECTS> nd_record_v_objs,
+	nd_record_v_viewobjs;
+static array<sbyte, 32> nd_record_v_rendering;
 static fix nd_record_v_player_afterburner = -1;
 #endif
 static int nd_record_v_player_energy = -1;
@@ -1605,7 +1607,7 @@ enum purpose_type
 
 static int newdemo_read_demo_start(enum purpose_type purpose)
 {
-	sbyte i=0, version=0, game_type=0, laser_level=0, c=0;
+	sbyte i=0, version=0, game_type=0, c=0;
 	ubyte energy=0, shield=0;
 	char current_mission[9];
 	fix nd_GameTime32 = 0;
@@ -1779,7 +1781,8 @@ static int newdemo_read_demo_start(enum purpose_type purpose)
 			nd_write_short(i);
 	}
 
-	nd_read_byte(&laser_level);
+	nd_read_byte(&i);
+	const stored_laser_level laser_level(i);
 	if ((purpose != PURPOSE_REWRITE) && (laser_level != Players[Player_num].laser_level)) {
 		Players[Player_num].laser_level = laser_level;
 		update_laser_weapon_info();
@@ -1855,7 +1858,7 @@ static int newdemo_read_demo_start(enum purpose_type purpose)
 			shield = (unsigned char)flags;
 			flags = (flags >> 8) & 0x00ffffff;
 			flags |= (Primary_weapon << 24);
-			Primary_weapon = Secondary_weapon;
+			Primary_weapon = static_cast<primary_weapon_index_t>(Secondary_weapon);
 			Secondary_weapon = c;
 		} else
 			PHYSFS_seek(infile, PHYSFS_tell(infile) - 1);
@@ -2461,7 +2464,7 @@ static int newdemo_read_frame_information(int rewrite)
 			}
 
 			if (weapon_type == 0)
-				Primary_weapon = (int)weapon_num;
+				Primary_weapon = static_cast<primary_weapon_index_t>(weapon_num);
 			else
 				Secondary_weapon = (int)weapon_num;
 
@@ -2484,12 +2487,12 @@ static int newdemo_read_frame_information(int rewrite)
 			}
 			if ((Newdemo_vcr_state == ND_STATE_PLAYBACK) || (Newdemo_vcr_state == ND_STATE_FASTFORWARD) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEFORWARD)) {
 				if (weapon_type == 0)
-					Primary_weapon = (int)weapon_num;
+					Primary_weapon = static_cast<primary_weapon_index_t>(weapon_num);
 				else
 					Secondary_weapon = (int)weapon_num;
 			} else if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD)) {
 				if (weapon_type == 0)
-					Primary_weapon = (int)old_weapon;
+					Primary_weapon = static_cast<primary_weapon_index_t>(old_weapon);
 				else
 					Secondary_weapon = (int)old_weapon;
 			}
@@ -2500,15 +2503,6 @@ static int newdemo_read_frame_information(int rewrite)
 			segnum_t segnum;
 			sbyte side;
 			vms_vector pnt;
-#if defined(DXX_BUILD_DESCENT_II)
-			object dummy;
-
-			//create a dummy object which will be the weapon that hits
-			//the monitor. the blowup code wants to know who the parent of the
-			//laser is, so create a laser whose parent is the player
-			dummy.ctype.laser_info.parent_type = OBJ_PLAYER;
-			dummy.ctype.laser_info.parent_num = Player_num;
-#endif
 
 			nd_read_short(&segnum);
 			nd_read_byte(&side);
@@ -2521,11 +2515,19 @@ static int newdemo_read_frame_information(int rewrite)
 				break;
 			}
 			if (Newdemo_vcr_state != ND_STATE_PAUSED)
+			{
 #if defined(DXX_BUILD_DESCENT_I)
 				check_effect_blowup(&(Segments[segnum]), side, pnt, nullptr, 0, 0);
 #elif defined(DXX_BUILD_DESCENT_II)
-				check_effect_blowup(&(Segments[segnum]), side, pnt, &dummy, 0, 0);
+			//create a dummy object which will be the weapon that hits
+			//the monitor. the blowup code wants to know who the parent of the
+			//laser is, so create a laser whose parent is the player
+				laser_parent dummy;
+				dummy.parent_type = OBJ_PLAYER;
+				dummy.parent_num = Player_num;
+				check_effect_blowup(vsegptridx(segnum), side, pnt, dummy, 0, 0);
 #endif
+			}
 			break;
 		}
 
@@ -2924,10 +2926,10 @@ static int newdemo_read_frame_information(int rewrite)
 				break;
 			}
 			if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD)) {
-				Players[Player_num].laser_level = old_level;
+				Players[Player_num].laser_level = stored_laser_level(old_level);
 				update_laser_weapon_info();
 			} else if ((Newdemo_vcr_state == ND_STATE_PLAYBACK) || (Newdemo_vcr_state == ND_STATE_FASTFORWARD) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEFORWARD)) {
-				Players[Player_num].laser_level = new_level;
+				Players[Player_num].laser_level = stored_laser_level(new_level);
 				update_laser_weapon_info();
 			}
 			break;
@@ -3159,7 +3161,7 @@ void newdemo_goto_beginning()
 void newdemo_goto_end(int to_rewrite)
 {
 	short frame_length=0, byte_count=0, bshort=0;
-	sbyte level=0, bbyte=0, laser_level=0, c=0, cloaked=0;
+	sbyte level=0, bbyte=0, c=0, cloaked=0;
 	ubyte energy=0, shield=0;
 	int loc=0, bint=0;
 
@@ -3248,7 +3250,9 @@ void newdemo_goto_end(int to_rewrite)
 	}
 	range_for (auto &i, Players[Player_num].secondary_ammo)
 		nd_read_short((short *)&(i));
-	nd_read_byte(&laser_level);
+	int8_t i;
+	nd_read_byte(&i);
+	const stored_laser_level laser_level(i);
 	if (laser_level != Players[Player_num].laser_level) {
 		Players[Player_num].laser_level = laser_level;
 		if (!to_rewrite)
@@ -4080,7 +4084,7 @@ static void nd_render_extras (ubyte which,const vcobjptr_t obj)
 	if (which==255)
 	{
 		Int3(); // how'd we get here?
-		do_cockpit_window_view(w,0,WBU_WEAPON,NULL);
+		do_cockpit_window_view(w,WBU_WEAPON);
 		return;
 	}
 
