@@ -5,10 +5,12 @@ compiler:
   - clang
 
 env:
-  - SCONSFLAGS="debug=False editor=False"
-  - SCONSFLAGS="debug=False editor=True"
-  - SCONSFLAGS="debug=True editor=False"
-  - SCONSFLAGS="debug=True editor=True"
+#  - SCONSFLAGS="debug=False editor=False"
+#  - SCONSFLAGS="debug=False editor=True"
+#  - SCONSFLAGS="debug=True editor=False"
+#  - SCONSFLAGS="debug=True editor=True"
+  - SCONSFLAGS="debug=False editor=False host_platform=darwin"
+  - SCONSFLAGS="debug=False editor=False host_platform=win32"
 
 before_install:
   # g++4.8.1
