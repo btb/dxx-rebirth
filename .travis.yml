@@ -5,8 +5,10 @@ compiler:
   - clang
 
 env:
-  - SCONSFLAGS="debug=False"
-  - SCONSFLAGS="debug=True"
+  - SCONSFLAGS="debug=False editor=False"
+  - SCONSFLAGS="debug=False editor=True"
+  - SCONSFLAGS="debug=True editor=False"
+  - SCONSFLAGS="debug=True editor=True"
 
 before_install:
   # g++4.8.1
