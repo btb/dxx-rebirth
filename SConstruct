@@ -815,11 +815,18 @@ struct A{explicit operator bool();};
 help:assume compiler supports explicitly deleted functions
 """
 		f = '''
-int a()=delete;
+int a(%s)=delete;
 '''
-		r = self.Cxx11Compile(context, text=f, msg='for explicitly deleted functions')
+		r = self.Cxx11Compile(context, text=f % 'int b', msg='for explicitly deleted functions with named parameters')
+		if r:
+			return
+		r = self.Cxx11Compile(context, text=f % 'int', msg='for explicitly deleted functions with anonymous parameters')
 		if not r:
 			raise SCons.Errors.StopError("C++ compiler does not support explicitly deleted functions.")
+		r = self.Cxx11Compile(context, text=f % 'int b', msg='for explicitly deleted functions with named parameters and -Wno-unused-parameter', successflags={'CXXFLAGS' : ['-Wno-unused-parameter']})
+		if r:
+			return
+		raise SCons.Errors.StopError("C++ compiler rejects explicitly delet named parameters, even with -Wno-unused-parameter.")
 	@_implicit_test
 	def check_cxx11_free_begin(self,context,**kwargs):
 		return self.Cxx11Compile(context, msg='for C++11 functions begin(), end()', successflags={'CPPDEFINES' : ['DXX_HAVE_CXX11_BEGIN']}, **kwargs)
