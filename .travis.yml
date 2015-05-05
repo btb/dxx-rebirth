@@ -1,14 +1,38 @@
 language: cpp
 
-compiler:
-- gcc
-#- clang
+env:
+  - HOST=linux SCONSFLAGS=""
+  - HOST=win32 SCONSFLAGS="verbosebuild=True"
+# - HOST=win64 SCONSFLAGS=""
+# - HOST=darwin SCONSFLAGS=""
 
 before_install:
-- sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-- sudo apt-get update -qq
-- sudo apt-get install -y libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev
-- if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
-- if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+#native build
+  - if [ $HOST = linux ]; then sudo apt-get install -y libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev; fi
+  - if [ $HOST = linux ]; then sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y; fi
+  - if [ $HOST = linux ]; then sudo apt-get update -qq; fi
+  - if [ $HOST = linux ]; then sudo apt-get install -qq g++-4.8; fi
+  - if [ $HOST = linux ]; then SCONSFLAGS="$SCONSFLAGS CXX=g++-4.8"; fi
+
+#windows
+  - case $HOST in win32|win64) sudo apt-get remove -qq -y mingw32; esac
+  - case $HOST in win32|win64) sudo apt-get install -y mingw-w64; esac
+  - case $HOST in win32|win64) SCONSFLAGS="$SCONSFLAGS host_platform=win32 sconf_libphysfs=force-success"; esac
+
+#windows 32-bit
+  - if [ $HOST = win32 ]; then svn --non-interactive --trust-server-cert export https://github.com/btb/d2x/trunk/arch/win32 arch/win32; fi
+  - if [ $HOST = win32 ]; then PKG_CONFIG_LIBDIR=`pwd`/arch/win32/lib/pkgconfig; fi
+  - if [ $HOST = win32 ]; then SCONSFLAGS="$SCONSFLAGS CPPFLAGS=-Iarch/win32/include LDFLAGS=-Larch/win32/lib"; fi
+  - if [ $HOST = win32 ]; then SCONSFLAGS="$SCONSFLAGS CXX=i686-w64-mingw32-g++ RC=i686-w64-mingw32-windres"; fi
+
+#windows 64 bit
+  - if [ $HOST = win64 ]; then svn --non-interactive --trust-server-cert export https://github.com/btb/d2x/trunk/arch/win64 arch/win64; fi
+  - if [ $HOST = win64 ]; then PKG_CONFIG_LIBDIR=`pwd`/arch/win64/lib/pkgconfig; fi
+  - if [ $HOST = win64 ]; then SCONSFLAGS="$SCONSFLAGS CPPFLAGS=-Iarch/win64/include LDFLAGS=-Larch/win64/lib"; fi
+  - if [ $HOST = win64 ]; then SCONSFLAGS="$SCONSFLAGS CXX=x86_64-w64-mingw32-g++ RC=x86_64-w64-mingw32-windres"; fi
+
+  - echo $PKG_CONFIG_LIBDIR
+  - echo $SCONSFLAGS
+  - export SCONSFLAGS PKG_CONFIG_LIBDIR
 
 script: scons
