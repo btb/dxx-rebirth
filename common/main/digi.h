@@ -142,7 +142,7 @@ int verify_sound_channel_free( int channel );
 
 class RAIIdigi_sound
 {
-	static constexpr tt::integral_constant<int, -1> invalid_channel{};
+	static const int invalid_channel = -1;
 	int channel;
 	static void stop(int channel)
 	{

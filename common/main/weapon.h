@@ -354,9 +354,9 @@ class has_weapon_result
 {
 	uint8_t m_result;
 public:
-	static constexpr tt::integral_constant<uint8_t, 1> has_weapon_flag{};
-	static constexpr tt::integral_constant<uint8_t, 2> has_energy_flag{};
-	static constexpr tt::integral_constant<uint8_t, 4> has_ammo_flag{};
+	static const uint8_t has_weapon_flag = 1;
+	static const uint8_t has_energy_flag = 2;
+	static const uint8_t has_ammo_flag = 4;
 	has_weapon_result() = default;
 	constexpr has_weapon_result(uint8_t r) : m_result(r)
 	{
