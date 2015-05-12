@@ -310,18 +310,6 @@ public:
 	}
 };
 
-/* Morphing models always ignored light.  Now ignore it more
- * efficiently.
- */
-class glow_num_stub : public tt::integral_constant<unsigned, ~0u>
-{
-public:
-	const glow_num_stub &operator=(unsigned) const
-	{
-		return *this;
-	}
-};
-
 class g3_draw_morphing_model_state :
 	public interpreter_base
 {
@@ -331,7 +319,7 @@ class g3_draw_morphing_model_state :
 	static constexpr const glow_values_t *glow_values = nullptr;
 	const vms_vector *const new_points;
 	polygon_model_points &Interp_point_list;
-	static constexpr glow_num_stub glow_num{};
+	unsigned glow_num;
 public:
 	g3_draw_morphing_model_state(grs_bitmap **mbitmaps, const submodel_angles aangles, g3s_lrgb mlight, const vms_vector *npoints, polygon_model_points &plist) :
 		model_bitmaps(mbitmaps), anim_angles(aangles),
@@ -484,7 +472,6 @@ public:
 	}
 };
 
-constexpr glow_num_stub g3_draw_morphing_model_state::glow_num;
 constexpr const glow_values_t *g3_draw_morphing_model_state::glow_values;
 
 }
