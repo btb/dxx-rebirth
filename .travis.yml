@@ -5,7 +5,15 @@ compiler:
 #- clang
 
 env:
-  global: SCONSFLAGS="d_debug=True e_editor=True s_opengl=False dxx=d+,e+,s+ builddir_prefix=build/"
+  matrix:
+    - SCONSFLAGS="opengl=False debug=False editor=False"
+    - SCONSFLAGS="opengl=False debug=False editor=True"
+    - SCONSFLAGS="opengl=False debug=True  editor=False"
+    - SCONSFLAGS="opengl=False debug=True  editor=True"
+    - SCONSFLAGS="opengl=True  debug=False editor=False"
+    - SCONSFLAGS="opengl=True  debug=False editor=True"
+    - SCONSFLAGS="opengl=True  debug=True  editor=False"
+    - SCONSFLAGS="opengl=True  debug=True  editor=True"
 
 before_install:
 - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
