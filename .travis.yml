@@ -5,7 +5,7 @@ compiler:
 #- clang
 
 env:
-  global: SCONSFLAGS="d_debug=True e_editor=True dxx=d+,e+ builddir_prefix=build/"
+  global: SCONSFLAGS="d_debug=True e_editor=True s_opengl=False dxx=d+,e+,s+ builddir_prefix=build/"
 
 before_install:
 - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
